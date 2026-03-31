@@ -1,0 +1,29 @@
+---
+# See: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# See: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/resource/
+resources:
+  - namespace.yaml
+  - postgres.yaml
+  - redis.yaml
+  - otel_collector.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    deployed_by: skaffold
+    generated_by: skaffold
+  annotations:
+    deployed_by: skaffold
+    generated_by: skaffold
+
+configMapGenerator:
+  - name: opentelemetry-collector-config
+    namespace: localdev
+    files:
+      - config.yaml=./configs/otel_collector_config.yaml
+
+namespace: localdev
+---

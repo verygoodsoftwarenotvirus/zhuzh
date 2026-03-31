@@ -1,0 +1,31 @@
+---
+on:
+  pull_request:
+    paths:
+      - backend/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+name: backend build
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.26.x']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: Build backend
+        working-directory: backend/
+        run: make build

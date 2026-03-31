@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package uploaded_media;
+
+import "common.proto";
+import "filtering.proto";
+import "uploaded_media/uploaded_media_messages.proto";
+
+option go_package = "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/grpc/generated/services/uploaded_media";
+
+// CreateUploadedMedia
+message CreateUploadedMediaRequest {
+  UploadedMediaCreationRequestInput input = 1;
+}
+
+message CreateUploadedMediaResponse {
+  common.ResponseDetails response_details = 1;
+  UploadedMedia created = 2;
+}
+
+// GetUploadedMedia
+message GetUploadedMediaRequest {
+  string uploaded_media_id = 1;
+}
+
+message GetUploadedMediaResponse {
+  common.ResponseDetails response_details = 1;
+  UploadedMedia result = 2;
+}
+
+// GetUploadedMediaWithIDs
+message GetUploadedMediaWithIDsRequest {
+  repeated string ids = 1;
+}
+
+message GetUploadedMediaWithIDsResponse {
+  common.ResponseDetails response_details = 1;
+  repeated UploadedMedia results = 2;
+}
+
+// GetUploadedMediaForUser
+message GetUploadedMediaForUserRequest {
+  string user_id = 1;
+  filtering.QueryFilter filter = 2;
+}
+
+message GetUploadedMediaForUserResponse {
+  common.ResponseDetails response_details = 1;
+  filtering.Pagination pagination = 2;
+  repeated UploadedMedia results = 3;
+}
+
+// UpdateUploadedMedia
+message UpdateUploadedMediaRequest {
+  string uploaded_media_id = 1;
+  UploadedMediaUpdateRequestInput input = 2;
+}
+
+message UpdateUploadedMediaResponse {
+  common.ResponseDetails response_details = 1;
+  UploadedMedia updated = 2;
+}
+
+// ArchiveUploadedMedia
+message ArchiveUploadedMediaRequest {
+  string uploaded_media_id = 1;
+}
+
+message ArchiveUploadedMediaResponse {
+  common.ResponseDetails response_details = 1;
+}

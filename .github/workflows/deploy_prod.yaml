@@ -1,0 +1,223 @@
+---
+concurrency:
+  group: ${{ github.ref }}
+
+on:
+  release:
+    types: [published]
+
+name: deploy prod
+jobs:
+  baseline-infra:
+    timeout-minutes: 90
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+
+      - name: authenticate with GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.PROD_GOOGLE_CLOUD_CREDENTIALS }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.5
+          cli_config_credentials_token: ${{ secrets.TERRAFORM_CLOUD_API_TOKEN }}
+
+      - name: Terraform Init
+        working-directory: infra/deploy/environments/prod/terraform
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: infra/deploy/environments/prod/terraform
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: infra/deploy/environments/prod/terraform
+
+      - name: Create Grafana infra terraform annotation
+        if: success()
+        env:
+          GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
+          GRAFANA_AUTH_TOKEN: ${{ secrets.GRAFANA_AUTH_TOKEN }}
+        run: |
+          curl -sSf -X POST \
+            -H "Authorization: Bearer ${GRAFANA_AUTH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"Terraform apply (infra) - ${{ github.event.release.tag_name }} (${{ github.sha }})\",
+              \"tags\": [\"terraform\", \"infra\", \"production\"]
+            }" \
+            "${GRAFANA_URL}/api/annotations"
+
+  backend-infra:
+    needs:
+      - baseline-infra
+    timeout-minutes: 90
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        container-registry: ['us-central1-docker.pkg.dev']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+
+      - name: authenticate with GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.PROD_GOOGLE_CLOUD_CREDENTIALS }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Authorize Docker push to pkg.dev
+        run: gcloud auth configure-docker ${{ matrix.container-registry }}
+
+      - name: get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v3
+        with:
+          cluster_name: prod
+          context_name: prod_context
+          location: us-central1
+
+      - name: copy kubeconfig
+        working-directory: backend/deploy/environments/prod
+        run: |
+          cp ${{ env.KUBECONFIG }} terraform/terraform_kubeconfig
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.5
+          cli_config_credentials_token: ${{ secrets.TERRAFORM_CLOUD_API_TOKEN }}
+
+      - name: Terraform Init
+        working-directory: backend/deploy/environments/prod/terraform
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: backend/deploy/environments/prod/terraform
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: backend/deploy/environments/prod/terraform
+
+      - name: remove kubernetes config
+        working-directory: backend/deploy/environments/prod
+        run: rm -f terraform/terraform_kubeconfig || true
+
+      - name: Create Grafana backend-infra terraform annotation
+        if: success()
+        env:
+          GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
+          GRAFANA_AUTH_TOKEN: ${{ secrets.GRAFANA_AUTH_TOKEN }}
+        run: |
+          curl -sSf -X POST \
+            -H "Authorization: Bearer ${GRAFANA_AUTH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"Terraform apply (backend-infra) - ${{ github.event.release.tag_name }} (${{ github.sha }})\",
+              \"tags\": [\"terraform\", \"backend-infra\", \"production\"]
+            }" \
+            "${GRAFANA_URL}/api/annotations"
+
+  applications:
+    needs:
+      - backend-infra
+    if: always() && needs.backend-infra.result == 'success' && !cancelled()
+    timeout-minutes: 90
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.26.x']
+        container-registry: ['us-central1-docker.pkg.dev']
+    env:
+      VERSION: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache-dependency-path: backend/go.sum
+
+      - name: Restore Skaffold, ko, and Docker caches
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.skaffold
+            ~/.cache/ko
+          key: skaffold-ko-${{ runner.os }}-${{ hashFiles('backend/go.sum', 'backend/skaffold.yaml', 'frontend/package-lock.json', 'frontend/skaffold.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            skaffold-ko-${{ runner.os }}-${{ hashFiles('backend/go.sum', 'backend/skaffold.yaml', 'frontend/package-lock.json', 'frontend/skaffold.yaml') }}-
+            skaffold-ko-${{ runner.os }}-
+
+      - name: authenticate with GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.PROD_GOOGLE_CLOUD_CREDENTIALS }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Authorize Docker push to pkg.dev
+        run: gcloud auth configure-docker ${{ matrix.container-registry }}
+
+      - name: get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v3
+        with:
+          cluster_name: prod
+          context_name: prod_context
+          location: us-central1
+
+      - name: setup Skaffold
+        run: gcloud components update --quiet && gcloud components install skaffold --quiet
+
+      - name: Build and push Caddy image
+        run: |
+          docker build -t us-central1-docker.pkg.dev/zhuzh-prod/containers/caddy-cloudflare:2 infra/docker/caddy-cloudflare
+          docker push us-central1-docker.pkg.dev/zhuzh-prod/containers/caddy-cloudflare:2
+
+      # At least once (this has already been done manually)
+      # - name: Enable Secret Manager secret sync
+      #   run: gcloud beta container clusters update prod --region us-central1 --enable-secret-sync
+
+      - name: Apply infra kustomize (Caddy, SecretProviderClass, SecretSync, api-service-account)
+        run: kubectl apply -k infra/deploy/environments/prod/kustomize
+
+      - name: Skaffold deploy
+        run: KOCACHE="$HOME/.cache/ko" VERSION="${{ github.event.release.tag_name }}" skaffold run --filename=skaffold.yaml --build-concurrency 1 --profile prod
+
+      - name: Create Grafana deployment annotation
+        if: success()
+        env:
+          GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
+          GRAFANA_AUTH_TOKEN: ${{ secrets.GRAFANA_AUTH_TOKEN }}
+        run: |
+          curl -sSf -X POST \
+            -H "Authorization: Bearer ${GRAFANA_AUTH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"Deployed prod - ${{ github.event.release.tag_name }} (${{ github.sha }})\",
+              \"tags\": [\"deployment\", \"production\"]
+            }" \
+            "${GRAFANA_URL}/api/annotations"

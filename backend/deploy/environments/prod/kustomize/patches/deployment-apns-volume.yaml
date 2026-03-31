@@ -1,0 +1,19 @@
+# Mount APNs .p8 key as file for push notifications (async message handler only)
+# The secret apns-credentials is created by Terraform from var.APNS_AUTH_KEY_P8
+- op: add
+  path: "/spec/template/spec/volumes/-"
+  value:
+    name: apns-credentials
+    secret:
+      secretName: apns-credentials
+- op: add
+  path: "/spec/template/spec/containers/0/volumeMounts/-"
+  value:
+    name: apns-credentials
+    mountPath: /mnt/apns
+    readOnly: true
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: ZHUZH_PUSH_NOTIFICATIONS_APNS_AUTH_KEY_PATH
+    value: /mnt/apns/apns-auth-key.p8

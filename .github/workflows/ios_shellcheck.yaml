@@ -1,0 +1,22 @@
+---
+on:
+  pull_request:
+    paths:
+      - ios/scripts/**/*.sh
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+name: ios shellcheck
+jobs:
+  ios:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run shellcheck
+        working-directory: ios
+        run: make shellcheck

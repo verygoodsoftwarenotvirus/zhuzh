@@ -1,0 +1,254 @@
+{
+  "title": "API Server",
+  "uid": "ddb-api-server",
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 0,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": false,
+        "iconColor": "blue",
+        "name": "Deployments",
+        "target": { "limit": 100, "matchAny": true, "tags": ["deployment", "production"], "type": "dashboard" },
+        "type": "dashboard"
+      },
+      {
+        "builtIn": 0,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": false,
+        "iconColor": "orange",
+        "name": "Terraform",
+        "target": { "limit": 100, "matchAny": true, "tags": ["terraform", "infra", "backend-infra"], "type": "dashboard" },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "gRPC Request Rate by Method (from clients)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(rpc_client_duration_milliseconds_count[5m])) by (rpc_service, rpc_method)", "legendFormat": "{{rpc_service}}/{{rpc_method}}" }
+      ],
+      "description": "gRPC methods invoked by clients (async handler, etc.) calling the API. Shows relative popularity of each method."
+    },
+    {
+      "title": "gRPC Request Rate (server-side)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(rpc_server_duration_seconds_count{job=\"api_server\"}[5m])) or sum(rate(rpc_server_duration_milliseconds_count{job=\"api_server\"}[5m]))", "legendFormat": "gRPC req/s" }
+      ],
+      "description": "Total gRPC requests to API server. If no data, server-side metrics may not be exported."
+    },
+    {
+      "title": "gRPC by Method (server-side)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(rpc_server_duration_seconds_count{job=\"api_server\"}[5m])) by (rpc_service, rpc_method) or sum(rate(rpc_server_duration_milliseconds_count{job=\"api_server\"}[5m])) by (rpc_service, rpc_method)", "legendFormat": "{{rpc_service}}/{{rpc_method}}" }
+      ],
+      "description": "gRPC method popularity from server. If no data, run {__name__=~\".*rpc.*server.*\"} in Explore to discover metric names."
+    },
+    {
+      "title": "gRPC Latency by Method (from clients)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.50, sum(rate(rpc_client_duration_milliseconds_bucket[5m])) by (le, rpc_service, rpc_method))", "legendFormat": "p50 {{rpc_service}}/{{rpc_method}}" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum(rate(rpc_client_duration_milliseconds_bucket[5m])) by (le, rpc_service, rpc_method))", "legendFormat": "p95 {{rpc_service}}/{{rpc_method}}" }
+      ],
+      "description": "gRPC call latency from clients. Helps identify slow methods."
+    },
+    {
+      "title": "DB Query Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(db_sql_latency_milliseconds_count{job=\"api_server\"}[5m]))",
+          "legendFormat": "Queries/s"
+        }
+      ]
+    },
+    {
+      "title": "DB Latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.50, sum(rate(db_sql_latency_milliseconds_bucket{job=\"api_server\"}[5m])) by (le))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum(rate(db_sql_latency_milliseconds_bucket{job=\"api_server\"}[5m])) by (le))", "legendFormat": "p95" },
+        { "refId": "C", "expr": "histogram_quantile(0.99, sum(rate(db_sql_latency_milliseconds_bucket{job=\"api_server\"}[5m])) by (le))", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "title": "Deployment Replicas",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "kube_deployment_status_replicas_available{namespace=\"prod\", deployment=~\"zhuzh-service-api.*\"}", "legendFormat": "{{deployment}} available" },
+        { "refId": "B", "expr": "kube_deployment_spec_replicas{namespace=\"prod\", deployment=~\"zhuzh-service-api.*\"}", "legendFormat": "{{deployment}} desired" }
+      ]
+    },
+    {
+      "title": "Go Goroutines",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "process_runtime_go_goroutines{job=\"api_server\"}", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "title": "Go Heap Allocated",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 16 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "process_runtime_go_mem_heap_alloc_bytes{job=\"api_server\"}", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "title": "Go GC Pause (p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 22 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ns",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.99, sum(rate(process_runtime_go_gc_pause_ns_bucket{job=\"api_server\"}[5m])) by (le, instance))", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "title": "Host CPU",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 22 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(system_cpu_time_seconds_total{job=\"api_server\"}[5m])) by (instance) * 100", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "title": "Host Memory",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 22 },
+      "datasource": { "type": "prometheus" },
+      "description": "Used vs available memory as share of total (stacks to 100%). Uses average across API server instances.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 40,
+            "stacking": { "group": "A", "mode": "percent" }
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["mean", "lastNotNull"] }
+      },
+      "targets": [
+        { "refId": "A", "expr": "avg(system_memory_utilization_ratio{job=\"api_server\"})", "legendFormat": "Used" },
+        { "refId": "B", "expr": "1 - avg(system_memory_utilization_ratio{job=\"api_server\"})", "legendFormat": "Available" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 0
+}

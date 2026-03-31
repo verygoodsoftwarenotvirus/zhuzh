@@ -1,0 +1,65 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentelemetry-collector
+  labels:
+    app: zhuzh-infra
+    app.kubernetes.io/name: zhuzh-infra
+spec:
+  selector:
+    matchLabels:
+      app: zhuzh-infra
+      app.kubernetes.io/name: zhuzh-infra
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: zhuzh-infra
+        app.kubernetes.io/name: zhuzh-infra
+    spec:
+      containers:
+        - name: opentelemetry-collector
+          image: otel/opentelemetry-collector-contrib:0.115.1
+          command:
+            - "/otelcol-contrib"
+            - "--config"
+            - "/conf/config.yaml"
+          ports:
+            - containerPort: 4317
+              name: otlp-grpc
+            - containerPort: 13133
+              name: health
+          volumeMounts:
+            - name: opentelemetry-config
+              mountPath: /conf
+          env:
+            - name: "RUNNING_IN_KUBERNETES"
+              value: "true"
+      volumes:
+        - name: opentelemetry-config
+          configMap:
+            name: opentelemetry-collector-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector-svc
+  labels:
+    app: zhuzh-infra
+    app.kubernetes.io/name: zhuzh-infra
+spec:
+  selector:
+    app: zhuzh-infra
+    app.kubernetes.io/name: zhuzh-infra
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      protocol: TCP
+      targetPort: otlp-grpc
+    - name: health
+      port: 13133
+      protocol: TCP
+      targetPort: health
+  type: ClusterIP
+---

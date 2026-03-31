@@ -1,0 +1,129 @@
+---
+# See: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# See: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/resource/
+resources:
+  - namespace.yaml
+  - ../../../kustomize/components/api_server
+  - ../../../kustomize/components/workers
+  # Uncomment to enable MCP server deployment
+  # - ../../../kustomize/components/mcp_server
+
+# See: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patches/
+patches:
+  # API Server - override hostnames for K8s and use local images
+  - path: patches/deployment-k8s-hostnames.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-service-api-deployment
+  - path: patches/deployment-local-image-pull.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-service-api-deployment
+
+  # DB Cleaner CronJob
+  - path: patches/cronjob-k8s-hostnames.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-db-cleaner
+  - path: patches/cronjob-local-image-pull.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-db-cleaner
+
+  # Email Deliverability Test CronJob
+  - path: patches/cronjob-k8s-hostnames.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-email-deliverability-test
+  - path: patches/cronjob-local-image-pull.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-email-deliverability-test
+
+  # Queue Test CronJob
+  - path: patches/cronjob-k8s-hostnames.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-queue-test
+  - path: patches/cronjob-local-image-pull.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-queue-test
+
+  # Search Data Index Scheduler CronJob
+  - path: patches/cronjob-k8s-hostnames.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-search-data-index-scheduler
+  - path: patches/cronjob-local-image-pull.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-search-data-index-scheduler
+
+  # Mobile Notification Scheduler CronJob
+  - path: patches/cronjob-k8s-hostnames.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-mobile-notification-scheduler
+  - path: patches/cronjob-local-image-pull.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-mobile-notification-scheduler
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: zhuzh-backend
+      deployed_by: skaffold
+
+# Config files are symlinked from ../config_files/ to avoid duplication
+# K8s-specific hostnames are injected via env var patches above
+configMapGenerator:
+  - name: zhuzh-service-api-config
+    namespace: localdev
+    files:
+      - config.json=configs/api_service_config.json
+
+  - name: zhuzh-job-db-cleaner-config
+    namespace: localdev
+    files:
+      - config.json=configs/job_db_cleaner_config.json
+
+  - name: zhuzh-job-email-deliverability-test-config
+    namespace: localdev
+    files:
+      - config.json=configs/job_email_deliverability_test_config.json
+
+  - name: zhuzh-job-queue-test-config
+    namespace: localdev
+    files:
+      - config.json=configs/job_queue_test_config.json
+
+  - name: zhuzh-job-search-data-index-scheduler-config
+    namespace: localdev
+    files:
+      - config.json=configs/job_search_data_index_scheduler_config.json
+
+  - name: zhuzh-job-mobile-notification-scheduler-config
+    namespace: localdev
+    files:
+      - config.json=configs/job_mobile_notification_scheduler_config.json
+
+  # Uncomment to enable MCP server deployment
+  # - name: zhuzh-mcp-server-config
+  #   namespace: localdev
+  #   files:
+  #     - config.json=configs/mcp_server_config.json
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    generated_by: skaffold
+    deployed_by: skaffold
+  annotations:
+    generated_by: skaffold
+    deployed_by: skaffold

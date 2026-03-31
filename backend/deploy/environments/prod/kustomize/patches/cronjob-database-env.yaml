@@ -1,0 +1,34 @@
+# Shared database environment variables for CronJobs (host + encryption keys).
+# Per-service password patches are applied separately.
+- op: add
+  path: "/spec/jobTemplate/spec/template/spec/containers/0/env/-"
+  value:
+    name: ZHUZH_DATABASE_READ_CONNECTION_HOST
+    valueFrom:
+      secretKeyRef:
+        name: api-service-config
+        key: DATABASE_HOST
+- op: add
+  path: "/spec/jobTemplate/spec/template/spec/containers/0/env/-"
+  value:
+    name: ZHUZH_DATABASE_WRITE_CONNECTION_HOST
+    valueFrom:
+      secretKeyRef:
+        name: api-service-config
+        key: DATABASE_HOST
+- op: add
+  path: "/spec/jobTemplate/spec/template/spec/containers/0/env/-"
+  value:
+    name: ZHUZH_DATABASE_OAUTH2_TOKEN_ENCRYPTION_KEY
+    valueFrom:
+      secretKeyRef:
+        name: api-service-config
+        key: OAUTH2_TOKEN_ENCRYPTION_KEY
+- op: add
+  path: "/spec/jobTemplate/spec/template/spec/containers/0/env/-"
+  value:
+    name: ZHUZH_DATABASE_USER_DEVICE_TOKEN_ENCRYPTION_KEY
+    valueFrom:
+      secretKeyRef:
+        name: api-service-config
+        key: USER_DEVICE_TOKEN_ENCRYPTION_KEY

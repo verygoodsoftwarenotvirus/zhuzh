@@ -1,0 +1,26 @@
+package grpc
+
+import (
+	issuereportsmanager "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/issuereports/manager"
+	issuereportssvc "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/grpc/generated/services/issue_reports"
+
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/logging"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/tracing"
+
+	"github.com/samber/do/v2"
+)
+
+// RegisterIssueReportsService registers the issue reports gRPC service with the injector.
+func RegisterIssueReportsService(i do.Injector) {
+	do.Provide[IssueReportsMethodPermissions](i, func(i do.Injector) (IssueReportsMethodPermissions, error) {
+		return ProvideMethodPermissions(), nil
+	})
+
+	do.Provide[issuereportssvc.IssueReportsServiceServer](i, func(i do.Injector) (issuereportssvc.IssueReportsServiceServer, error) {
+		return NewService(
+			do.MustInvoke[logging.Logger](i),
+			do.MustInvoke[tracing.TracerProvider](i),
+			do.MustInvoke[issuereportsmanager.IssueReportsDataManager](i),
+		), nil
+	})
+}

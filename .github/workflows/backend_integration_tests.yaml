@@ -1,0 +1,40 @@
+---
+on: 
+  # gollum:
+  pull_request:
+    paths:
+      - backend/pkg/**
+      - backend/internal/**
+      - backend/tests/**
+      - backend/testing/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+name: backend - integration tests
+jobs:
+  run:
+    strategy:
+      matrix:
+        go-version: ['1.26.x']
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: vendor dependencies
+        working-directory: backend
+        run: make vendor
+
+      - name: run integration tests
+        working-directory: backend
+        run: make integration_tests

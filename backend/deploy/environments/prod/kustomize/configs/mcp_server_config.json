@@ -1,0 +1,72 @@
+{
+	"apiServiceConfig": {
+		"httpAPIServerURL": "https://http-api.zhuzh.dev",
+		"grpcAPIServerURL": "https://api.zhuzh.dev",
+		"username": "",
+		"password": "",
+		"oauth2APIClientID": "",
+		"oauth2APIClientSecret": ""
+	},
+	"observability": {
+		"profiling": {
+			"pyroscope": {
+				"serverAddress": "https://profiles-prod-001.grafana.net",
+				"uploadRate": 15000000000,
+				"insecure": false,
+				"enableMutexProfile": false,
+				"enableBlockProfile": false
+			},
+			"serviceName": "dinner_done_better_mcp_server",
+			"provider": "pyroscope"
+		},
+		"logging": {
+			"serviceName": "dinner_done_better_mcp_server",
+			"level": "info",
+			"otelslog": {
+				"endpointURL": "otel-collector-svc.prod.svc.cluster.local:4317",
+				"insecure": true,
+				"timeout": 2000000000
+			},
+			"provider": "otelslog"
+		},
+		"metrics": {
+			"otelgrpc": {
+				"metricsCollectorEndpoint": "otel-collector-svc.prod.svc.cluster.local:4317",
+				"collectionInterval": 30000000000,
+				"insecure": true,
+				"enableRuntimeMetrics": false,
+				"enableHostMetrics": false
+			},
+			"serviceName": "dinner_done_better_mcp_server",
+			"provider": "otelgrpc"
+		},
+		"tracing": {
+			"otelgrpc": {
+				"collector_endpoint": "otel-collector-svc.prod.svc.cluster.local:4317",
+				"insecure": true
+			},
+			"service_name": "dinner_done_better_mcp_server",
+			"provider": "otelgrpc",
+			"spanCollectionProbability": 1
+		}
+	},
+	"routing": {
+		"chiConfig": {
+			"serviceName": "dinner_done_better_mcp_server",
+			"enableCORSForLocalhost": true
+		},
+		"provider": "chi"
+	},
+	"grpc": {
+		"port": 0
+	},
+	"meta": {
+		"runMode": "production",
+		"debug": false
+	},
+	"http": {
+		"startupDeadline": 60000000000,
+		"port": 8000,
+		"debug": false
+	}
+}

@@ -1,0 +1,88 @@
+---
+apiVersion: skaffold/v4beta11
+kind: Config
+
+metadata:
+  name: zhuzh-frontend
+
+profiles:
+  - name: localdev
+    activation:
+      - kubeContext: docker-desktop
+    build:
+      local:
+        push: false
+      tagPolicy:
+        sha256: {}
+      artifacts:
+        - image: zhuzh-consumer-webapp
+          context: .
+          docker:
+            dockerfile: deploy/dockerfiles/consumer.Dockerfile
+            buildArgs:
+              COMMIT_HASH: '{{ cmd "bash" "-c" "git rev-parse HEAD 2>/dev/null || echo unknown" }}'
+              COMMIT_TIME: '{{ cmd "bash" "-c" "git log -1 --format=%cI HEAD 2>/dev/null || echo unknown" }}'
+              BUILD_TIME: '{{ cmd "bash" "-c" "date -u -Iseconds 2>/dev/null || echo unknown" }}'
+              VERSION: '{{ default "dev" .VERSION }}'
+        - image: zhuzh-admin-webapp
+          context: .
+          docker:
+            dockerfile: deploy/dockerfiles/admin.Dockerfile
+            buildArgs:
+              COMMIT_HASH: '{{ cmd "bash" "-c" "git rev-parse HEAD 2>/dev/null || echo unknown" }}'
+              COMMIT_TIME: '{{ cmd "bash" "-c" "git log -1 --format=%cI HEAD 2>/dev/null || echo unknown" }}'
+              BUILD_TIME: '{{ cmd "bash" "-c" "date -u -Iseconds 2>/dev/null || echo unknown" }}'
+              VERSION: '{{ default "dev" .VERSION }}'
+
+    manifests:
+      kustomize:
+        paths:
+          - deploy/environments/localdev/kustomize
+
+    deploy:
+      kubeContext: docker-desktop
+      kubectl:
+        defaultNamespace: localdev
+
+    portForward:
+      - resourceType: Service
+        resourceName: zhuzh-consumer-webapp-svc
+        namespace: localdev
+        port: 80
+      - resourceType: Service
+        resourceName: zhuzh-admin-webapp-svc
+        namespace: localdev
+        port: 8888
+
+  - name: prod
+    build:
+      tagPolicy:
+        sha256: {}
+      artifacts:
+        - image: us-central1-docker.pkg.dev/zhuzh-prod/containers/zhuzh-consumer-webapp
+          context: .
+          docker:
+            dockerfile: deploy/dockerfiles/consumer.Dockerfile
+            buildArgs:
+              COMMIT_HASH: '{{ cmd "bash" "-c" "git rev-parse HEAD 2>/dev/null || echo unknown" }}'
+              COMMIT_TIME: '{{ cmd "bash" "-c" "git log -1 --format=%cI HEAD 2>/dev/null || echo unknown" }}'
+              BUILD_TIME: '{{ cmd "bash" "-c" "date -u -Iseconds 2>/dev/null || echo unknown" }}'
+              VERSION: '{{ default "dev" .VERSION }}'
+        - image: us-central1-docker.pkg.dev/zhuzh-prod/containers/zhuzh-admin-webapp
+          context: .
+          docker:
+            dockerfile: deploy/dockerfiles/admin.Dockerfile
+            buildArgs:
+              COMMIT_HASH: '{{ cmd "bash" "-c" "git rev-parse HEAD 2>/dev/null || echo unknown" }}'
+              COMMIT_TIME: '{{ cmd "bash" "-c" "git log -1 --format=%cI HEAD 2>/dev/null || echo unknown" }}'
+              BUILD_TIME: '{{ cmd "bash" "-c" "date -u -Iseconds 2>/dev/null || echo unknown" }}'
+              VERSION: '{{ default "dev" .VERSION }}'
+
+    manifests:
+      kustomize:
+        paths:
+          - deploy/environments/prod/kustomize
+
+    deploy:
+      kubectl:
+        defaultNamespace: prod

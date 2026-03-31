@@ -1,0 +1,188 @@
+---
+apiVersion: skaffold/v4beta11
+kind: Config
+
+requires:
+  - configs: ["zhuzh-infra"]
+    path: ./infra/skaffold.yaml
+    activeProfiles:
+      - name: prod
+
+  - configs: ["zhuzh-backend"]
+    path: ./backend/skaffold.yaml
+    activeProfiles:
+      - name: prod
+
+  - configs: ["zhuzh-frontend"]
+    path: ./frontend/skaffold.yaml
+    activeProfiles:
+      - name: prod
+
+profiles:
+  - name: prod
+    verify:
+      # --- Core API checks ---
+      - name: http-api-ready
+        container:
+          name: http-api-ready
+          image: curlimages/curl:8.17.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              response=$(curl -sf --connect-timeout 15 --max-time 30 https://http-api.zhuzh.dev/_ops_/ready)
+              if [ $? -ne 0 ]; then echo "FAIL: readiness endpoint unreachable"; exit 1; fi
+              echo "Ready response: $response"
+              if echo "$response" | grep -q '"status":"up"'; then
+                echo "http-api readiness status: up"
+              else
+                echo "FAIL: readiness status is not 'up'"
+                exit 1
+              fi
+        executionMode:
+          kubernetesCluster: {}
+      - name: http-api-version-check
+        container:
+          name: http-api-version-check
+          image: curlimages/curl:8.17.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              response=$(curl -sf --connect-timeout 15 --max-time 30 https://http-api.zhuzh.dev/_ops_/version)
+              if [ $? -ne 0 ]; then echo "FAIL: version endpoint unreachable"; exit 1; fi
+              echo "Version response: $response"
+              commit=$(echo "$response" | grep -o '"commit_hash":"[^"]*"' | cut -d'"' -f4)
+              if [ -z "$commit" ] || [ "$commit" = "unknown" ]; then
+                echo "FAIL: commit_hash is empty or unknown"
+                exit 1
+              fi
+              echo "http-api version commit: $commit OK"
+        executionMode:
+          kubernetesCluster: {}
+      # --- MCP server checks ---
+      - name: mcp-server-ready
+        container:
+          name: mcp-server-ready
+          image: curlimages/curl:8.17.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              response=$(curl -sf --connect-timeout 15 --max-time 30 https://mcp.zhuzh.dev/_ops_/ready)
+              if [ $? -ne 0 ]; then echo "FAIL: MCP readiness endpoint unreachable"; exit 1; fi
+              echo "MCP ready response: $response"
+              echo "mcp.zhuzh.dev readiness: OK"
+        executionMode:
+          kubernetesCluster: {}
+      - name: mcp-server-version-check
+        container:
+          name: mcp-server-version-check
+          image: curlimages/curl:8.17.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              response=$(curl -sf --connect-timeout 15 --max-time 30 https://mcp.zhuzh.dev/_ops_/version)
+              if [ $? -ne 0 ]; then echo "FAIL: MCP version endpoint unreachable"; exit 1; fi
+              echo "Version response: $response"
+              commit=$(echo "$response" | grep -o '"commit_hash":"[^"]*"' | cut -d'"' -f4)
+              if [ -z "$commit" ] || [ "$commit" = "unknown" ]; then
+                echo "FAIL: commit_hash is empty or unknown"
+                exit 1
+              fi
+              echo "mcp-server version commit: $commit OK"
+        executionMode:
+          kubernetesCluster: {}
+      # --- gRPC API checks ---
+      - name: grpc-api-service-count
+        container:
+          name: grpc-api-service-count
+          image: fullstorydev/grpcurl:v1.9.3
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              services=$(grpcurl -insecure -connect-timeout 15 api.zhuzh.dev:443 list 2>&1)
+              if [ $? -ne 0 ]; then echo "FAIL: grpcurl list failed: $services"; exit 1; fi
+              count=$(echo "$services" | wc -l | tr -d ' ')
+              echo "Found $count gRPC services"
+              echo "$services"
+              if [ "$count" -lt 16 ]; then
+                echo "FAIL: expected at least 16 services but found $count"
+                exit 1
+              fi
+              echo "gRPC service count: OK"
+        executionMode:
+          kubernetesCluster: {}
+      - name: grpc-api-describe-auth
+        container:
+          name: grpc-api-describe-auth
+          image: fullstorydev/grpcurl:v1.9.3
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              output=$(grpcurl -insecure -connect-timeout 15 api.zhuzh.dev:443 describe auth.AuthService 2>&1)
+              if [ $? -ne 0 ]; then echo "FAIL: $output"; exit 1; fi
+              if echo "$output" | grep -q "LoginForToken"; then
+                echo "auth.AuthService describes OK"
+              else
+                echo "FAIL: LoginForToken not found in auth.AuthService description"
+                exit 1
+              fi
+        executionMode:
+          kubernetesCluster: {}
+      # --- Frontend checks ---
+      - name: consumer-webapp-ready
+        container:
+          name: consumer-webapp-ready
+          image: curlimages/curl:8.17.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              curl -sf --connect-timeout 15 --max-time 30 https://zhuzh.dev/_ops_/ready || { echo "FAIL: consumer webapp readiness check failed"; exit 1; }
+              echo "zhuzh.dev readiness: OK"
+        executionMode:
+          kubernetesCluster: {}
+      - name: consumer-webapp-responds
+        container:
+          name: consumer-webapp-responds
+          image: curlimages/curl:8.17.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              code=$(curl -sL -o /dev/null -w "%{http_code}" --connect-timeout 15 --max-time 30 https://zhuzh.dev/login)
+              [ "${code:0:1}" = "2" ] || [ "${code:0:1}" = "3" ] || { echo "FAIL: consumer webapp returned $code"; exit 1; }
+              echo "zhuzh.dev/login: OK ($code)"
+        executionMode:
+          kubernetesCluster: {}
+      - name: admin-webapp-ready
+        container:
+          name: admin-webapp-ready
+          image: curlimages/curl:8.17.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              curl -sf --connect-timeout 15 --max-time 30 https://admin.zhuzh.dev/_ops_/ready || { echo "FAIL: admin webapp readiness check failed"; exit 1; }
+              echo "admin.zhuzh.dev readiness: OK"
+        executionMode:
+          kubernetesCluster: {}
+      - name: admin-responds
+        container:
+          name: admin-responds
+          image: curlimages/curl:8.17.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              code=$(curl -sL -o /dev/null -w "%{http_code}" --connect-timeout 15 --max-time 30 https://admin.zhuzh.dev/login)
+              [ "${code:0:1}" = "2" ] || [ "${code:0:1}" = "3" ] || { echo "FAIL: admin returned $code"; exit 1; }
+              echo "admin.zhuzh.dev: OK"
+        executionMode:
+          kubernetesCluster: {}
+      # --- Infrastructure checks ---
+      - name: root-site-aasa
+        container:
+          name: root-site-aasa
+          image: curlimages/curl:8.17.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              curl -sf --connect-timeout 15 --max-time 30 https://zhuzh.dev/.well-known/apple-app-site-association || exit 1
+              echo "zhuzh.dev AASA: OK"
+              curl -sf --connect-timeout 15 --max-time 30 https://www.zhuzh.dev/.well-known/apple-app-site-association || exit 1
+              echo "www.zhuzh.dev AASA: OK"

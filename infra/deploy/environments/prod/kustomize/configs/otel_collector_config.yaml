@@ -1,0 +1,138 @@
+---
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+  # kube-state-metrics (commented out; uncomment prometheus block and add - prometheus to metrics receivers to re-enable)
+  # prometheus:
+  #   config:
+  #     scrape_configs:
+  #       - job_name: 'kube-state-metrics'
+  #         scrape_interval: 60s
+  #         static_configs:
+  #           - targets: ['kube-state-metrics.prod.svc.cluster.local:8080']
+  #         metric_relabel_configs:
+  #           - source_labels: [__name__]
+  #             regex: 'kube_deployment_status_replicas(_ready|_available|_unavailable|_updated)?|kube_deployment_spec_replicas|kube_deployment_status_observed_generation|kube_node_info|kube_node_status_condition|kube_node_status_allocatable'
+  #             action: keep
+
+  googlecloudmonitoring:
+    project_id: zhuzh-prod
+    collection_interval: 5m
+    metrics_list:
+      - metric_name: "pubsub.googleapis.com/subscription/num_undelivered_messages"
+      - metric_name: "pubsub.googleapis.com/subscription/oldest_unacked_message_age"
+      - metric_name: "cloudsql.googleapis.com/database/cpu/utilization"
+      - metric_name: "cloudsql.googleapis.com/database/disk/utilization"
+      - metric_name: "cloudsql.googleapis.com/database/memory/utilization"
+      - metric_name: "cloudsql.googleapis.com/database/postgresql/num_backends"
+
+extensions:
+  health_check:
+    endpoint: "0.0.0.0:13133"
+
+  basicauth/prometheus:
+    client_auth:
+      username: ${env:PROMETHEUS_USERNAME}
+      password: ${env:PROMETHEUS_PASSWORD}
+
+  basicauth/loki:
+    client_auth:
+      username: ${env:LOKI_USERNAME}
+      password: ${env:LOKI_PASSWORD}
+
+  basicauth/tempo:
+    client_auth:
+      username: ${env:TEMPO_USERNAME}
+      password: ${env:TEMPO_PASSWORD}
+
+exporters:
+  prometheusremotewrite:
+    endpoint: "https://prometheus-prod-13-prod-us-east-0.grafana.net/api/prom/push"
+    auth:
+      authenticator: basicauth/prometheus
+
+  otlp:
+    endpoint: "tempo-prod-04-prod-us-east-0.grafana.net:443"
+    auth:
+      authenticator: basicauth/tempo
+
+  otlphttp:
+    endpoint: "https://logs-prod-006.grafana.net/otlp"
+    auth:
+      authenticator: basicauth/loki
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 400
+    spike_limit_mib: 100
+
+  batch:
+    timeout: 1s
+    send_batch_size: 500
+    send_batch_max_size: 1500
+
+  logdedup:
+    interval: 60s
+    log_count_attribute: dedup_count
+    timezone: 'UTC'
+    exclude_fields:
+      - body.time
+
+  probabilistic_sampler:
+    sampling_percentage: ${env:OTEL_TRACE_SAMPLING_PERCENTAGE}
+
+  resource:
+    attributes:
+      - action: insert
+        key: service_name
+        from_attribute: service.name
+
+service:
+  telemetry:
+    logs:
+      encoding: json
+      disable_caller: true
+      disable_stacktrace: true
+    metrics:
+      level: basic
+
+  extensions:
+    - health_check
+    - basicauth/prometheus
+    - basicauth/loki
+    - basicauth/tempo
+  pipelines:
+    traces:
+      receivers:
+        - otlp
+      processors:
+        - memory_limiter
+        - probabilistic_sampler
+        - batch
+      exporters:
+        - otlp
+    metrics:
+      receivers:
+        - otlp
+        - googlecloudmonitoring
+      processors:
+        - memory_limiter
+        - batch
+      exporters:
+        - prometheusremotewrite
+    logs:
+      receivers:
+        - otlp
+      processors:
+        - memory_limiter
+        - resource
+        - logdedup
+        - batch
+      exporters:
+        - otlphttp

@@ -1,0 +1,68 @@
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+*.zip
+
+# Test binary, build with "go test -c"
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# IDEs
+.idea
+.vscode/
+
+# Vim
+*.swp
+
+# OSX
+.DS_Store
+
+# Go
+vendor
+
+# Log files
+*.log
+
+# go test profiles
+*.coverprofile
+*.profile
+
+# terraform
+**/.terraform/*
+**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+
+# TLS certificates
+*.pem
+*.key
+
+cmd/playground/*.go
+
+artifacts/
+*.wasm
+
+# iOS/Xcode build artifacts
+ios/build/
+ios/**/DerivedData/
+*.xcuserstate
+*.xcuserdatad
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.swiftpm/
+
+# iOS secrets (use Secrets.xcconfig.example as template)
+ios/Secrets.xcconfig
+
+# Fastlane
+ios/fastlane/report.xml
+ios/fastlane/README.md
+ios/fastlane/test_output/
+ios/vendor/bundle/
+
+legacy_frontend

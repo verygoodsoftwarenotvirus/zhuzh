@@ -1,0 +1,10 @@
+# Resend API key for email deliverability test CronJob
+# Applied only to email deliverability test; uses api-service-config for secret
+- op: add
+  path: "/spec/jobTemplate/spec/template/spec/containers/0/env/-"
+  value:
+    name: ZHUZH_EMAIL_RESEND_API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: api-service-config
+        key: RESEND_API_KEY

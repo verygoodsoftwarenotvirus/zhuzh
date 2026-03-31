@@ -1,0 +1,26 @@
+package grpc
+
+import (
+	paymentsmanager "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/payments/manager"
+	paymentssvc "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/grpc/generated/services/payments"
+
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/logging"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/tracing"
+
+	"github.com/samber/do/v2"
+)
+
+// RegisterPaymentsService registers the payments gRPC service with the injector.
+func RegisterPaymentsService(i do.Injector) {
+	do.Provide[PaymentsMethodPermissions](i, func(i do.Injector) (PaymentsMethodPermissions, error) {
+		return ProvideMethodPermissions(), nil
+	})
+
+	do.Provide[paymentssvc.PaymentsServiceServer](i, func(i do.Injector) (paymentssvc.PaymentsServiceServer, error) {
+		return NewService(
+			do.MustInvoke[logging.Logger](i),
+			do.MustInvoke[tracing.TracerProvider](i),
+			do.MustInvoke[paymentsmanager.PaymentsDataManager](i),
+		), nil
+	})
+}

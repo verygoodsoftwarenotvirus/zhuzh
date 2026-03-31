@@ -1,0 +1,122 @@
+checks:
+  # Postgres generated packages - check *Params structs in function calls
+  - source_pkg: "internal/repositories/postgres/auditlogentries/generated"
+    target_pkgs:
+      - "internal/repositories/postgres/auditlogentries"
+    type_filter:
+      has_suffix: "Params"
+    pattern_type: "function_call_args"
+    target_field_name: "generatedQuerier"
+    description: "auditlogentries Params"
+
+  - source_pkg: "internal/repositories/postgres/auth/generated"
+    target_pkgs:
+      - "internal/repositories/postgres/auth"
+    type_filter:
+      has_suffix: "Params"
+    pattern_type: "function_call_args"
+    target_field_name: "generatedQuerier"
+    description: "auth Params"
+
+  - source_pkg: "internal/repositories/postgres/identity/generated"
+    target_pkgs:
+      - "internal/repositories/postgres/identity"
+    type_filter:
+      has_suffix: "Params"
+    pattern_type: "function_call_args"
+    target_field_name: "generatedQuerier"
+    description: "identity Params"
+
+  - source_pkg: "internal/repositories/postgres/internalops/generated"
+    target_pkgs:
+      - "internal/repositories/postgres/internalops"
+    type_filter:
+      has_suffix: "Params"
+    pattern_type: "function_call_args"
+    target_field_name: "generatedQuerier"
+    description: "internalops Params"
+
+  - source_pkg: "internal/repositories/postgres/notifications/generated"
+    target_pkgs:
+      - "internal/repositories/postgres/notifications"
+    type_filter:
+      has_suffix: "Params"
+    pattern_type: "function_call_args"
+    target_field_name: "generatedQuerier"
+    description: "notifications Params"
+
+  - source_pkg: "internal/repositories/postgres/oauth/generated"
+    target_pkgs:
+      - "internal/repositories/postgres/oauth"
+    type_filter:
+      has_suffix: "Params"
+    pattern_type: "function_call_args"
+    target_field_name: "generatedQuerier"
+    description: "oauth Params"
+
+  - source_pkg: "internal/repositories/postgres/settings/generated"
+    target_pkgs:
+      - "internal/repositories/postgres/settings"
+    type_filter:
+      has_suffix: "Params"
+    pattern_type: "function_call_args"
+    target_field_name: "generatedQuerier"
+    description: "settings Params"
+
+  - source_pkg: "internal/repositories/postgres/webhooks/generated"
+    target_pkgs:
+      - "internal/repositories/postgres/webhooks"
+    type_filter:
+      has_suffix: "Params"
+    pattern_type: "function_call_args"
+    target_field_name: "generatedQuerier"
+    description: "webhooks Params"
+
+  # gRPC service converter packages - check struct literals in return/assignments
+  - source_pkg: "internal/domain/identity"
+    target_pkgs:
+      - "internal/services/identity/grpc/converters"
+    type_filter:
+      contains_any: ["Input", "Response"]
+    pattern_type: "struct_literals"
+    description: "identity gRPC converters"
+
+  - source_pkg: "internal/domain/oauth"
+    target_pkgs:
+      - "internal/services/oauth/grpc/converters"
+    type_filter:
+      contains_any: ["Input", "Response"]
+    pattern_type: "struct_literals"
+    description: "oauth gRPC converters"
+
+  - source_pkg: "internal/domain/webhooks"
+    target_pkgs:
+      - "internal/services/webhooks/grpc/converters"
+    type_filter:
+      contains_any: ["Input", "Response"]
+    pattern_type: "struct_literals"
+    description: "webhooks gRPC converters"
+
+  - source_pkg: "internal/domain/settings"
+    target_pkgs:
+      - "internal/services/settings/grpc/converters"
+    type_filter:
+      contains_any: ["Input", "Response"]
+    pattern_type: "struct_literals"
+    description: "settings gRPC converters"
+
+  - source_pkg: "internal/domain/notifications"
+    target_pkgs:
+      - "internal/services/notifications/grpc/converters"
+    type_filter:
+      contains_any: ["Input", "Response"]
+    pattern_type: "struct_literals"
+    description: "notifications gRPC converters"
+
+  - source_pkg: "internal/domain/audit"
+    target_pkgs:
+      - "internal/services/audit/grpc/converters"
+    type_filter:
+      contains_any: ["Input", "Response"]
+    pattern_type: "struct_literals"
+    description: "audit gRPC converters"

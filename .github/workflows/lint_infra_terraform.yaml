@@ -1,0 +1,44 @@
+---
+on:
+  pull_request:
+    paths:
+      - infra/deploy/environments/prod/terraform/*.tf
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+name: lint infra terraform
+jobs:
+  infra:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.26.x']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.5
+          cli_config_credentials_token: ${{ secrets.TERRAFORM_CLOUD_API_TOKEN }}
+
+      - name: Terraform Init
+        working-directory: infra/deploy/environments/prod/terraform
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: infra/deploy/environments/prod/terraform
+        id: validate
+        run: terraform validate -no-color

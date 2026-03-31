@@ -1,0 +1,24 @@
+{
+  "name": "frontend",
+  "private": true,
+  "workspaces": [
+    "consumer",
+    "admin",
+    "packages/*"
+  ],
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "npm run lint -w consumer -w admin",
+    "lint:fix": "npm run lint:fix -w consumer -w admin",
+    "test": "npm run test:run -w consumer && npm run test:run -w admin",
+    "check": "npm run check -w consumer && npm run check -w admin",
+    "build": "npm run build -w consumer && npm run build -w admin",
+    "dev:consumer": "npm run dev -w consumer",
+    "dev:admin": "npm run dev -w admin"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.1",
+    "prettier-plugin-svelte": "^3.4.1"
+  }
+}

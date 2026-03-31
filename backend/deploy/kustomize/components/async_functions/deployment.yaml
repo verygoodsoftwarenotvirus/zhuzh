@@ -1,0 +1,50 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zhuzh-async-message-handler-deployment
+  labels:
+    app: zhuzh-backend
+    app.kubernetes.io/name: zhuzh-backend-services
+spec:
+  progressDeadlineSeconds: 1200
+  selector:
+    matchLabels:
+      app: zhuzh-backend
+      app.kubernetes.io/name: zhuzh-backend-services
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: zhuzh-backend
+        app.kubernetes.io/name: zhuzh-backend-services
+    spec:
+      containers:
+        - name: zhuzh-async-message-handler
+          image: zhuzh-async-message-handler
+          imagePullPolicy: Always
+          env:
+            - name: "CONFIGURATION_FILEPATH"
+              value: "/etc/service-config.json"
+            - name: "RUNNING_IN_KUBERNETES"
+              value: "true"
+            - name: "ZHUZH_OBSERVABILITY_METRICS_OTEL_SERVICE_NAME"
+              value: "dinner_done_better_async_function_handler"
+            - name: "ZHUZH_OBSERVABILITY_TRACING_TRACING_SERVICE_NAME"
+              value: "dinner_done_better_async_function_handler"
+          volumeMounts:
+            - name: "config"
+              mountPath: "/etc/service-config.json"
+              subPath: "config.json"
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "25m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+      volumes:
+        - name: "config"
+          configMap:
+            name: "zhuzh-async-message-handler-config"
+---

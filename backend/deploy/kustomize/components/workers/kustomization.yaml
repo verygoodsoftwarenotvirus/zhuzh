@@ -1,0 +1,10 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - db_cleaner_cronjob.yaml
+  - email_deliverability_test_cronjob.yaml
+  - queue_test_cronjob.yaml
+  - search_data_index_scheduler_cronjob.yaml
+  - mobile_notification_scheduler_cronjob.yaml

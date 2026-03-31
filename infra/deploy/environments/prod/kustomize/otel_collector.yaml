@@ -1,0 +1,99 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentelemetry-collector
+  labels:
+    app: zhuzh-infra
+    app.kubernetes.io/name: zhuzh-infra
+spec:
+  selector:
+    matchLabels:
+      app: zhuzh-infra
+      app.kubernetes.io/name: zhuzh-infra
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: zhuzh-infra
+        app.kubernetes.io/name: zhuzh-infra
+    spec:
+      serviceAccountName: api-service-account
+      initContainers:
+        - name: wait-for-workload-identity
+          image: curlimages/curl:latest
+          command:
+            - sh
+            - -c
+            - |
+              for i in $(seq 1 30); do
+                code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Metadata-Flavor: Google' \
+                  http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email)
+                if [ "$code" = "200" ]; then
+                  exit 0
+                fi
+                sleep 1
+              done
+              echo "Timed out waiting for Workload Identity metadata" >&2
+              exit 1
+      containers:
+        - name: opentelemetry-collector
+          image: otel/opentelemetry-collector-contrib:0.146.0
+          command:
+            - "/otelcol-contrib"
+            - "--config"
+            - "/conf/config.yaml"
+          ports:
+            - containerPort: 4317
+              name: otlp-grpc
+            - containerPort: 4318
+              name: otlp-http
+            - containerPort: 13133
+              name: health
+          volumeMounts:
+            - name: opentelemetry-config
+              mountPath: /conf
+          env:
+            - name: "RUNNING_IN_KUBERNETES"
+              value: "true"
+            - name: "GCE_METADATA_HOST"
+              value: "169.254.169.254"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+      volumes:
+        # this volume contains the configuration file for the OTel collector.
+        - name: opentelemetry-config
+          configMap:
+            name: opentelemetry-collector-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector-svc
+  labels:
+    app: zhuzh-infra
+    app.kubernetes.io/name: zhuzh-infra
+spec:
+  selector:
+    app: zhuzh-infra
+    app.kubernetes.io/name: zhuzh-infra
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      protocol: TCP
+      targetPort: otlp-grpc
+    - name: otlp-http
+      port: 4318
+      protocol: TCP
+      targetPort: otlp-http
+    - name: health
+      port: 13133
+      protocol: TCP
+      targetPort: health
+  type: ClusterIP
+---

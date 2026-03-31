@@ -1,0 +1,84 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: caddy-data
+  namespace: prod
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard-rwo
+  resources:
+    requests:
+      storage: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caddy
+  namespace: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: caddy
+  template:
+    metadata:
+      labels:
+        app: caddy
+    spec:
+      containers:
+        - name: caddy
+          image: us-central1-docker.pkg.dev/zhuzh-prod/containers/caddy-cloudflare
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: https
+              containerPort: 443
+              protocol: TCP
+          env:
+            - name: CLOUDFLARE_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflare-api-key
+                  key: token
+          volumeMounts:
+            - name: caddy-config
+              mountPath: /etc/caddy/Caddyfile
+              subPath: Caddyfile
+              readOnly: true
+            - name: caddy-data
+              mountPath: /data
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+          livenessProbe:
+            tcpSocket:
+              port: 443
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 6
+          readinessProbe:
+            tcpSocket:
+              port: 443
+            initialDelaySeconds: 60
+            periodSeconds: 5
+            failureThreshold: 6
+          securityContext:
+            capabilities:
+              add:
+                - NET_BIND_SERVICE
+              drop:
+                - ALL
+      volumes:
+        - name: caddy-config
+          configMap:
+            name: caddy-config
+        - name: caddy-data
+          persistentVolumeClaim:
+            claimName: caddy-data

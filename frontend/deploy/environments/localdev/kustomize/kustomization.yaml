@@ -1,0 +1,178 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: localdev
+
+resources:
+  - ../../../kustomize/components/consumer_webapp
+  - ../../../kustomize/components/admin_webapp
+
+# Local dev uses IfNotPresent for locally built images
+patches:
+  - target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-consumer-webapp-deployment
+    patch: |-
+      - op: replace
+        path: "/spec/template/spec/containers/0/imagePullPolicy"
+        value: "IfNotPresent"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: GRPC_API_SERVER_URL
+          value: "zhuzh-api-svc.localdev.svc.cluster.local:8001"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: HTTP_API_SERVER_URL
+          value: "http://zhuzh-api-svc.localdev.svc.cluster.local:8000"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: OAUTH2_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-consumer-webapp-secrets
+              key: OAUTH2_CLIENT_ID
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: OAUTH2_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-consumer-webapp-secrets
+              key: OAUTH2_CLIENT_SECRET
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: COOKIE_NAME
+          value: "consumer_session"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: COOKIE_DOMAIN
+          value: ""
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: COOKIE_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-consumer-webapp-secrets
+              key: COOKIE_ENCRYPTION_KEY
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: AASA_TEAM_ID
+          value: "K8R2Q5UWQS"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: AASA_BUNDLE_ID
+          value: "com.zhuzh.ios"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: PUBLIC_AVATAR_MEDIA_URL_PREFIX
+          value: "http://localhost:8000/uploads"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: DEVELOPING_LOCALLY
+          value: "true"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: OTEL_COLLECTOR_GRPC_URL
+          value: "otel-collector-svc.localdev.svc.cluster.local:4317"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: OTEL_COLLECTOR_HTTP_URL
+          value: "http://otel-collector-svc.localdev.svc.cluster.local:4318"
+
+  - target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-admin-webapp-deployment
+    patch: |-
+      - op: replace
+        path: "/spec/template/spec/containers/0/imagePullPolicy"
+        value: "IfNotPresent"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: GRPC_API_SERVER_URL
+          value: "zhuzh-api-svc.localdev.svc.cluster.local:8001"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: HTTP_API_SERVER_URL
+          value: "http://zhuzh-api-svc.localdev.svc.cluster.local:8000"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: OAUTH2_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-admin-webapp-config
+              key: OAUTH2_CLIENT_ID
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: OAUTH2_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-admin-webapp-config
+              key: OAUTH2_CLIENT_SECRET
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: COOKIE_NAME
+          value: "admin_webapp"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: COOKIE_DOMAIN
+          value: ""
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: COOKIE_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-admin-webapp-config
+              key: COOKIE_ENCRYPTION_KEY
+
+# Local dev needs secrets - create from literals (dev-only values)
+# These must exist; backend localdev may create them. If not, add secretGenerator.
+# For now we assume backend localdev or manual setup creates zhuzh-consumer-webapp-secrets
+# and zhuzh-admin-webapp-config with COOKIE_ENCRYPTION_KEY.
+# Generate a dev cookie key: openssl rand -base64 32
+secretGenerator:
+  - name: zhuzh-consumer-webapp-secrets
+    namespace: localdev
+    literals:
+      - OAUTH2_CLIENT_ID=localdev-consumer-client
+      - OAUTH2_CLIENT_SECRET=localdev-consumer-secret
+      - COOKIE_ENCRYPTION_KEY=dGVzdGtleTEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2
+    options:
+      disableNameSuffixHash: true
+
+  - name: zhuzh-admin-webapp-config
+    namespace: localdev
+    literals:
+      - OAUTH2_CLIENT_ID=localdev-admin-client
+      - OAUTH2_CLIENT_SECRET=localdev-admin-secret
+      - COOKIE_NAME=admin_webapp
+      - COOKIE_DOMAIN=
+      - COOKIE_ENCRYPTION_KEY=dGVzdGtleTEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2
+    options:
+      disableNameSuffixHash: true
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: zhuzh-frontend
+      deployed_by: skaffold

@@ -1,0 +1,5 @@
+git_url("https://github.com/zhuzh/ios-certificates")
+storage_mode("git")
+type("appstore")
+app_identifier("com.zhuzh.ios")
+team_id("K8R2Q5UWQS")

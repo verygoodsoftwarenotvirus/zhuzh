@@ -1,0 +1,17 @@
+# Pyroscope Basic Auth for Grafana Cloud (from grafana-cloud-creds)
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: ZHUZH_OBSERVABILITY_PROFILING_PYROSCOPE_BASIC_AUTH_USER
+    valueFrom:
+      secretKeyRef:
+        name: grafana-cloud-creds
+        key: GRAFANA_CLOUD_PYROSCOPE_USERNAME
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: ZHUZH_OBSERVABILITY_PROFILING_PYROSCOPE_BASIC_AUTH_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: grafana-cloud-creds
+        key: GRAFANA_CLOUD_PYROSCOPE_PASSWORD

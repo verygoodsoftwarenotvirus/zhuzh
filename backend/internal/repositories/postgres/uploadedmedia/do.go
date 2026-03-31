@@ -1,0 +1,24 @@
+package uploadedmedia
+
+import (
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/audit"
+	types "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/uploadedmedia"
+
+	"github.com/verygoodsoftwarenotvirus/platform/v4/database"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/logging"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/tracing"
+
+	"github.com/samber/do/v2"
+)
+
+// RegisterUploadedMediaRepository registers the uploaded media repository with the injector.
+func RegisterUploadedMediaRepository(i do.Injector) {
+	do.Provide[types.Repository](i, func(i do.Injector) (types.Repository, error) {
+		return ProvideUploadedMediaRepository(
+			do.MustInvoke[logging.Logger](i),
+			do.MustInvoke[tracing.TracerProvider](i),
+			do.MustInvoke[audit.Repository](i),
+			do.MustInvoke[database.Client](i),
+		), nil
+	})
+}

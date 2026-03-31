@@ -1,0 +1,41 @@
+package grpc
+
+import (
+	"context"
+
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/authentication/sessions"
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/webhooks/manager"
+	webhookssvc "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/grpc/generated/services/webhooks"
+
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/logging"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/tracing"
+)
+
+const (
+	o11yName = "configuration_service"
+)
+
+var _ webhookssvc.WebhooksServiceServer = (*serviceImpl)(nil)
+
+type (
+	serviceImpl struct {
+		webhookssvc.UnimplementedWebhooksServiceServer
+		tracer                    tracing.Tracer
+		logger                    logging.Logger
+		sessionContextDataFetcher func(context.Context) (*sessions.ContextData, error)
+		webhookManager            manager.WebhookDataManager
+	}
+)
+
+func NewService(
+	logger logging.Logger,
+	tracerProvider tracing.TracerProvider,
+	webhookManager manager.WebhookDataManager,
+) webhookssvc.WebhooksServiceServer {
+	return &serviceImpl{
+		logger:                    logging.NewNamedLogger(logger, o11yName),
+		tracer:                    tracing.NewNamedTracer(tracerProvider, o11yName),
+		sessionContextDataFetcher: sessions.FetchContextDataFromContext,
+		webhookManager:            webhookManager,
+	}
+}

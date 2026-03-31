@@ -1,0 +1,70 @@
+{
+	"apiServiceConfig": {
+		"httpAPIServerURL": "http://localhost:8000",
+		"grpcAPIServerURL": ":8001",
+		"username": "",
+		"password": "",
+		"oauth2APIClientID": "",
+		"oauth2APIClientSecret": ""
+	},
+	"observability": {
+		"profiling": {
+			"pprof": {
+				"port": 6060,
+				"enableMutexProfile": false,
+				"enableBlockProfile": false
+			},
+			"serviceName": "dinner_done_better_mcp_server",
+			"provider": "pprof"
+		},
+		"logging": {
+			"serviceName": "dinner_done_better_mcp_server",
+			"level": "debug",
+			"otelslog": {
+				"endpointURL": "otel_collector:4317",
+				"insecure": true,
+				"timeout": 3000000000
+			},
+			"provider": "otelslog"
+		},
+		"metrics": {
+			"otelgrpc": {
+				"metricsCollectorEndpoint": "otel_collector:4317",
+				"collectionInterval": 1000000000,
+				"insecure": true,
+				"enableRuntimeMetrics": false,
+				"enableHostMetrics": false
+			},
+			"serviceName": "dinner_done_better_mcp_server",
+			"provider": "otelgrpc"
+		},
+		"tracing": {
+			"otelgrpc": {
+				"collector_endpoint": "otel_collector:4317",
+				"insecure": true
+			},
+			"service_name": "dinner_done_better_mcp_server",
+			"provider": "otelgrpc",
+			"spanCollectionProbability": 1
+		}
+	},
+	"routing": {
+		"chiConfig": {
+			"serviceName": "dinner_done_better_mcp_server",
+			"enableCORSForLocalhost": true
+		},
+		"provider": "chi"
+	},
+	"grpc": {
+		"port": 0
+	},
+	"meta": {
+		"runMode": "development",
+		"debug": true
+	},
+	"http": {
+		"startupDeadline": 60000000000,
+		"port": 8000,
+		"debug": true
+	}
+}

@@ -1,0 +1,65 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zhuzh-service-api-deployment
+  labels:
+    app: zhuzh-backend
+    app.kubernetes.io/name: zhuzh-backend
+spec:
+  progressDeadlineSeconds: 1200
+  selector:
+    matchLabels:
+      app: zhuzh-backend
+      app.kubernetes.io/name: zhuzh-backend
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: zhuzh-backend
+        app.kubernetes.io/name: zhuzh-backend
+    spec:
+      containers:
+        # this is the API server container
+        - name: zhuzh-service-api
+          image: zhuzh-service-api
+          args: ["serve"]
+          imagePullPolicy: Always
+          env:
+            - name: "CONFIGURATION_FILEPATH"
+              value: "/etc/service-config.json"
+            - name: "RUNNING_IN_KUBERNETES"
+              value: "true"
+          volumeMounts:
+            - name: "config"
+              mountPath: "/etc/service-config.json"
+              subPath: "config.json"
+          ports:
+            - containerPort: 8000
+              name: http
+            - containerPort: 8001
+              name: grpc
+          livenessProbe:
+            httpGet:
+              path: "/_ops_/live"
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: "/_ops_/ready"
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "50m"
+            limits:
+              memory: "3Gi"
+              cpu: "500m"
+      volumes:
+        - name: "config"
+          configMap:
+            name: "zhuzh-service-api-config"
+---

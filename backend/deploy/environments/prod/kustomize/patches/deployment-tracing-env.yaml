@@ -1,0 +1,6 @@
+# Tracing span collection probability - explicitly set so it can be overridden in k8s without redeploying
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: ZHUZH_OBSERVABILITY_TRACING_TRACING_SPAN_COLLECTION_PROBABILITY
+    value: "1"

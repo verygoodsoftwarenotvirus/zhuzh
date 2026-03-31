@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package internalops;
+
+import "common.proto";
+
+option go_package = "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/grpc/generated/services/internalops";
+
+message TestQueueMessageRequest {
+  string queue_name = 1;
+}
+
+message TestQueueMessageResponse {
+  common.ResponseDetails response_details = 1;
+  bool success = 2;
+  string test_id = 3;
+  int64 round_trip_ms = 4;
+}

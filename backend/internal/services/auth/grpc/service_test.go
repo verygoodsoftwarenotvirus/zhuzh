@@ -1,0 +1,135 @@
+package grpc
+
+import (
+	"context"
+	"testing"
+
+	authenticationmock "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/authentication/mock"
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/authentication/sessions"
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/authorization"
+	authmock "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/auth/mock"
+	identitymanagermock "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/identity/manager/mock"
+	authsvc "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/grpc/generated/services/auth"
+
+	"github.com/verygoodsoftwarenotvirus/platform/v4/encoding"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/featureflags/mock"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/logging"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/tracing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func buildTestService(t *testing.T) (*serviceImpl, *identitymanagermock.IdentityDataManager, *authmock.AuthManager, *authenticationmock.Manager, *mock.FeatureFlagManager) {
+	t.Helper()
+
+	logger := logging.NewNoopLogger()
+	tracerProvider := tracing.NewNoopTracerProvider()
+	tracer := tracing.NewTracerForTest(t.Name())
+	identityDataManager := &identitymanagermock.IdentityDataManager{}
+	authManager := &authmock.AuthManager{}
+	authenticationManager := &authenticationmock.Manager{}
+	featureFlagManager := &mock.FeatureFlagManager{}
+
+	jsonEncoder := encoding.ProvideServerEncoderDecoder(logger, tracerProvider, encoding.ContentTypeJSON)
+
+	service := &serviceImpl{
+		tracer:                tracer,
+		logger:                logger,
+		identityDataManager:   identityDataManager,
+		authManager:           authManager,
+		authenticationManager: authenticationManager,
+		featureFlagManager:    featureFlagManager,
+		jsonEncoder:           jsonEncoder,
+	}
+
+	return service, identityDataManager, authManager, authenticationManager, featureFlagManager
+}
+
+func TestNewAuthService(t *testing.T) {
+	t.Parallel()
+
+	t.Run("standard", func(t *testing.T) {
+		t.Parallel()
+
+		logger := logging.NewNoopLogger()
+		tracerProvider := tracing.NewNoopTracerProvider()
+		identityDataManager := &identitymanagermock.IdentityDataManager{}
+		authManager := &authmock.AuthManager{}
+		authenticationManager := &authenticationmock.Manager{}
+
+		featureFlagManager := &mock.FeatureFlagManager{}
+		service := NewAuthService(logger, tracerProvider, identityDataManager, authManager, authenticationManager, featureFlagManager, nil)
+
+		assert.NotNil(t, service)
+		assert.Implements(t, (*authsvc.AuthServiceServer)(nil), service)
+
+		// Type assertion to ensure we get the correct implementation
+		impl, ok := service.(*serviceImpl)
+		assert.True(t, ok)
+		assert.NotNil(t, impl.logger)
+		assert.NotNil(t, impl.tracer)
+		assert.Equal(t, identityDataManager, impl.identityDataManager)
+		assert.Equal(t, authManager, impl.authManager)
+		assert.Equal(t, authenticationManager, impl.authenticationManager)
+		assert.Equal(t, featureFlagManager, impl.featureFlagManager)
+	})
+}
+
+func TestServiceImpl_fetchSessionContext(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		service, _, _, _, _ := buildTestService(t)
+
+		sessionContextData := &sessions.ContextData{
+			Requester: sessions.RequesterInfo{
+				UserID:                   "test-user-id",
+				AccountStatus:            "active",
+				AccountStatusExplanation: "",
+				ServicePermissions:       authorization.NewServiceRolePermissionChecker([]string{"service_admin"}, nil),
+			},
+			ActiveAccountID: "test-account-id",
+			AccountPermissions: map[string]authorization.AccountRolePermissionsChecker{
+				"test-account-id": authorization.NewAccountRolePermissionChecker(nil),
+			},
+		}
+
+		ctx := context.WithValue(t.Context(), sessions.SessionContextDataKey, sessionContextData)
+
+		result, err := service.fetchSessionContext(ctx)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, sessionContextData, result)
+		assert.Equal(t, "test-user-id", result.GetUserID())
+		assert.Equal(t, "test-account-id", result.GetActiveAccountID())
+	})
+
+	t.Run("missing session context", func(t *testing.T) {
+		t.Parallel()
+
+		service, _, _, _, _ := buildTestService(t)
+		ctx := t.Context()
+
+		result, err := service.fetchSessionContext(ctx)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "session context not found")
+	})
+
+	t.Run("wrong type in context", func(t *testing.T) {
+		t.Parallel()
+
+		service, _, _, _, _ := buildTestService(t)
+		ctx := context.WithValue(t.Context(), sessions.SessionContextDataKey, "wrong-type")
+
+		result, err := service.fetchSessionContext(ctx)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "session context not found")
+	})
+}

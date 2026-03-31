@@ -1,0 +1,139 @@
+---
+on:  
+  # gollum:
+  pull_request:
+    paths:
+      - backend/cmd/**
+      - backend/pkg/**
+      - backend/internal/**
+      - backend/go.mod
+      - backend/go.sum
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+name: backend - generated files
+jobs:
+  dependency_injection:
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        go-version: ['1.26.x']
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '${{ matrix.go-version }}'
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: Install wire
+        run: go install github.com/google/wire/cmd/wire@latest
+
+      - name: Ensure dependency injection code can be generated
+        working-directory: backend
+        run: make rewire format_golang
+
+      - name: Check for changes
+        run: git diff --exit-code
+
+  configs:
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        go-version: ['1.26.x']
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '${{ matrix.go-version }}'
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: Ensure configs can be generated
+        working-directory: backend
+        run: make configs
+
+      - name: Check for changes
+        run: git diff --exit-code
+
+  queries:
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        go-version: ['1.26.x']
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '${{ matrix.go-version }}'
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: Ensure queries and querier can be generated
+        working-directory: backend
+        run: make queries struct_usage_check format_golang
+
+      - name: Check for changes
+        run: git diff --exit-code
+
+  env_vars_file:
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        go-version: ['1.26.x']
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '${{ matrix.go-version }}'
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: generate env vars file
+        working-directory: backend
+        run: make vendor env_vars
+
+      - name: Fail on changes
+        run: git diff --exit-code
+
+  go_mod_tidy:
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        go-version: ['1.26.x']
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '${{ matrix.go-version }}'
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: Ensure go.mod and go.sum are tidy
+        working-directory: backend
+        run: go mod tidy
+
+      - name: Check for changes
+        run: git diff --exit-code

@@ -1,0 +1,213 @@
+{
+	"httpClient": null,
+	"queues": {
+		"dataChangesTopicName": "data_changes",
+		"outboundEmailsTopicName": "outbound_emails",
+		"searchIndexRequestsTopicName": "search_index_requests",
+		"mobileNotificationsTopicName": "mobile_notifications",
+		"userDataAggregationTopicName": "user_data_aggregation_requests",
+		"webhookExecutionRequestsTopicName": "webhook_execution_requests"
+	},
+	"storage": {
+		"gcpConfig": {
+			"bucketName": "userdata.zhuzh.dev"
+		},
+		"bucketName": "userdata.zhuzh.dev",
+		"provider": "gcp"
+	},
+	"pushNotifications": {
+		"apns": {
+			"authKeyPath": "/mnt/apns/apns-auth-key.p8",
+			"keyID": "",
+			"teamID": "K8R2Q5UWQS",
+			"bundleID": "com.zhuzh.ios",
+			"production": true
+		},
+		"fcm": {
+			"credentialsPath": ""
+		},
+		"provider": "apns_fcm"
+	},
+	"encoding": {
+		"contentType": ""
+	},
+	"baseURL": "",
+	"events": {
+		"consumers": {
+			"provider": "pubsub",
+			"sqs": {
+				"queueAddress": ""
+			},
+			"pubSub": {
+				"projectID": "zhuzh-prod"
+			},
+			"redis": {
+				"username": "",
+				"queueAddress": null
+			}
+		},
+		"publishers": {
+			"provider": "pubsub",
+			"sqs": {
+				"queueAddress": ""
+			},
+			"pubSub": {
+				"projectID": "zhuzh-prod"
+			},
+			"redis": {
+				"username": "",
+				"queueAddress": null
+			}
+		}
+	},
+	"observability": {
+		"profiling": {
+			"pyroscope": {
+				"serverAddress": "https://profiles-prod-001.grafana.net",
+				"uploadRate": 15000000000,
+				"insecure": false,
+				"enableMutexProfile": false,
+				"enableBlockProfile": false
+			},
+			"serviceName": "async_message_handler",
+			"provider": "pyroscope"
+		},
+		"logging": {
+			"serviceName": "async_message_handler",
+			"level": "info",
+			"otelslog": {
+				"endpointURL": "otel-collector-svc.prod.svc.cluster.local:4317",
+				"insecure": true,
+				"timeout": 2000000000
+			},
+			"provider": "otelslog"
+		},
+		"metrics": {
+			"otelgrpc": {
+				"metricsCollectorEndpoint": "otel-collector-svc.prod.svc.cluster.local:4317",
+				"collectionInterval": 30000000000,
+				"insecure": true,
+				"enableRuntimeMetrics": true,
+				"enableHostMetrics": true
+			},
+			"serviceName": "async_message_handler",
+			"provider": "otelgrpc"
+		},
+		"tracing": {
+			"otelgrpc": {
+				"collector_endpoint": "otel-collector-svc.prod.svc.cluster.local:4317",
+				"insecure": true
+			},
+			"service_name": "async_message_handler",
+			"provider": "otelgrpc",
+			"spanCollectionProbability": 1
+		}
+	},
+	"analytics": {
+		"proxySources": {
+			"ios": {
+				"segment": null,
+				"posthog": {
+					"apiKey": "placeholder"
+				},
+				"rudderstack": null,
+				"provider": "posthog",
+				"circuitBreaker": {
+					"name": "ios_analytics",
+					"circuitBreakerErrorPercentage": 0.5,
+					"circuitBreakerMinimumOccurrenceThreshold": 100
+				}
+			},
+			"web": {
+				"segment": null,
+				"posthog": {
+					"apiKey": "placeholder"
+				},
+				"rudderstack": null,
+				"provider": "posthog",
+				"circuitBreaker": {
+					"name": "web_analytics",
+					"circuitBreakerErrorPercentage": 0.5,
+					"circuitBreakerMinimumOccurrenceThreshold": 100
+				}
+			}
+		},
+		"segment": null,
+		"posthog": {
+			"apiKey": "placeholder"
+		},
+		"rudderstack": null,
+		"provider": "posthog",
+		"circuitBreaker": {
+			"name": "api_analytics",
+			"circuitBreakerErrorPercentage": 0.5,
+			"circuitBreakerMinimumOccurrenceThreshold": 100
+		}
+	},
+	"email": {
+		"sendgrid": null,
+		"mailgun": null,
+		"mailjet": null,
+		"resend": {
+			"apiToken": "placeholder"
+		},
+		"postmark": null,
+		"provider": "resend",
+		"baseURL": "",
+		"outboundInvitesEmailAddress": "",
+		"passwordResetCreationEmailAddress": "",
+		"passwordResetRedemptionEmailAddress": "",
+		"circuitBreakerConfig": {
+			"name": "prod_emailer",
+			"circuitBreakerErrorPercentage": 0.5,
+			"circuitBreakerMinimumOccurrenceThreshold": 100
+		}
+	},
+	"search": {
+		"algolia": {
+			"appID": "",
+			"writeAPIKey": "",
+			"timeout": 0
+		},
+		"elasticsearch": null,
+		"provider": "algolia",
+		"circuitBreakerConfig": {
+			"name": "prod_text_searcher",
+			"circuitBreakerErrorPercentage": 0.5,
+			"circuitBreakerMinimumOccurrenceThreshold": 100
+		}
+	},
+	"database": {
+		"encryption": {
+			"provider": "salsa20"
+		},
+		"oauth2TokenEncryptionKey": "",
+		"userDeviceTokenEncryptionKey": "",
+		"provider": "postgres",
+		"readConnection": {
+			"username": "async_message_handler",
+			"password": "",
+			"database": "zhuzh",
+			"hostname": "",
+			"port": 5432,
+			"disableSSL": false
+		},
+		"writeConnection": {
+			"username": "async_message_handler",
+			"password": "",
+			"database": "zhuzh",
+			"hostname": "",
+			"port": 5432,
+			"disableSSL": false
+		},
+		"pingWaitPeriod": 1000000000,
+		"maxPingAttempts": 50,
+		"connMaxLifetime": 1800000000000,
+		"maxIdleConns": 5,
+		"maxOpenConns": 7,
+		"debug": false,
+		"logQueries": false,
+		"runMigrations": true,
+		"enableDatabaseMetrics": false
+	}
+}

@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zhuzh-api-svc
+  labels:
+    app: zhuzh-backend
+    app.kubernetes.io/name: zhuzh-backend
+spec:
+  selector:
+    app.kubernetes.io/name: zhuzh-backend
+  ports:
+    - name: http
+      port: 8000
+      protocol: TCP
+      targetPort: http
+    - name: grpc
+      port: 8001
+      protocol: TCP
+      targetPort: grpc
+  type: ClusterIP
+---

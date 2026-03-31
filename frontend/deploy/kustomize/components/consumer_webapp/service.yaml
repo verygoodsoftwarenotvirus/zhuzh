@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zhuzh-consumer-webapp-svc
+  labels:
+    app: zhuzh-consumer-webapp
+    app.kubernetes.io/name: zhuzh-consumer-webapp
+spec:
+  selector:
+    app.kubernetes.io/name: zhuzh-consumer-webapp
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 3000
+  type: ClusterIP
+---

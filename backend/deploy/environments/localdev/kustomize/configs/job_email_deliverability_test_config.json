@@ -1,0 +1,63 @@
+{
+	"httpClient": null,
+	"recipientEmailAddress": "verygoodsoftwarenotvirus@protonmail.com",
+	"serviceEnvironment": "dev",
+	"observability": {
+		"profiling": {
+			"pprof": {
+				"port": 6060,
+				"enableMutexProfile": false,
+				"enableBlockProfile": false
+			},
+			"serviceName": "email_deliverability_test",
+			"provider": "pprof"
+		},
+		"logging": {
+			"serviceName": "email_deliverability_test",
+			"level": "debug",
+			"otelslog": {
+				"endpointURL": "otel_collector:4317",
+				"insecure": true,
+				"timeout": 3000000000
+			},
+			"provider": "otelslog"
+		},
+		"metrics": {
+			"otelgrpc": {
+				"metricsCollectorEndpoint": "otel_collector:4317",
+				"collectionInterval": 1000000000,
+				"insecure": true,
+				"enableRuntimeMetrics": false,
+				"enableHostMetrics": false
+			},
+			"serviceName": "email_deliverability_test",
+			"provider": "otelgrpc"
+		},
+		"tracing": {
+			"otelgrpc": {
+				"collector_endpoint": "otel_collector:4317",
+				"insecure": true
+			},
+			"service_name": "email_deliverability_test",
+			"provider": "otelgrpc",
+			"spanCollectionProbability": 1
+		}
+	},
+	"email": {
+		"sendgrid": null,
+		"mailgun": null,
+		"mailjet": null,
+		"resend": null,
+		"postmark": null,
+		"provider": "",
+		"baseURL": "",
+		"outboundInvitesEmailAddress": "",
+		"passwordResetCreationEmailAddress": "",
+		"passwordResetRedemptionEmailAddress": "",
+		"circuitBreakerConfig": {
+			"name": "",
+			"circuitBreakerErrorPercentage": 0,
+			"circuitBreakerMinimumOccurrenceThreshold": 0
+		}
+	}
+}

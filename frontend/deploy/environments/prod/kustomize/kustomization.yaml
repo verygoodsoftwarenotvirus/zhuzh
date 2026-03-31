@@ -1,0 +1,163 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: prod
+
+resources:
+  - ../../../kustomize/components/consumer_webapp
+  - ../../../kustomize/components/admin_webapp
+
+images:
+  - name: zhuzh-consumer-webapp
+    newName: us-central1-docker.pkg.dev/zhuzh-prod/containers/zhuzh-consumer-webapp
+    newTag: latest
+
+  - name: zhuzh-admin-webapp
+    newName: us-central1-docker.pkg.dev/zhuzh-prod/containers/zhuzh-admin-webapp
+    newTag: latest
+
+patches:
+  ### Consumer Webapp - env vars from Terraform secrets
+  - patch: |-
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: GRPC_API_SERVER_URL
+          value: "api.zhuzh.dev:443"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: HTTP_API_SERVER_URL
+          value: "https://http-api.zhuzh.dev"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: OAUTH2_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-consumer-webapp-secrets
+              key: OAUTH2_CLIENT_ID
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: OAUTH2_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-consumer-webapp-secrets
+              key: OAUTH2_CLIENT_SECRET
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: COOKIE_NAME
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-consumer-webapp-secrets
+              key: COOKIE_NAME
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: COOKIE_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-consumer-webapp-secrets
+              key: COOKIE_DOMAIN
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: COOKIE_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-consumer-webapp-secrets
+              key: COOKIE_ENCRYPTION_KEY
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: AASA_TEAM_ID
+          value: "K8R2Q5UWQS"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: AASA_BUNDLE_ID
+          value: "com.zhuzh.ios"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: PUBLIC_AVATAR_MEDIA_URL_PREFIX
+          value: "https://media.zhuzh.dev/avatars"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: OTEL_COLLECTOR_GRPC_URL
+          value: "otel-collector-svc.prod.svc.cluster.local:4317"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: OTEL_COLLECTOR_HTTP_URL
+          value: "http://otel-collector-svc.prod.svc.cluster.local:4318"
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-consumer-webapp-deployment
+
+  ### Admin Webapp - env vars from Terraform secrets
+  - patch: |-
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: GRPC_API_SERVER_URL
+          value: "api.zhuzh.dev:443"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: HTTP_API_SERVER_URL
+          value: "https://http-api.zhuzh.dev"
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: OAUTH2_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-admin-webapp-config
+              key: OAUTH2_CLIENT_ID
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: OAUTH2_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-admin-webapp-config
+              key: OAUTH2_CLIENT_SECRET
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: COOKIE_NAME
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-admin-webapp-config
+              key: COOKIE_NAME
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: COOKIE_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-admin-webapp-config
+              key: COOKIE_DOMAIN
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: COOKIE_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: zhuzh-admin-webapp-config
+              key: COOKIE_ENCRYPTION_KEY
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-admin-webapp-deployment
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: zhuzh-frontend
+      deployed_by: skaffold

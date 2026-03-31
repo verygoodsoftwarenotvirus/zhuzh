@@ -1,0 +1,64 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zhuzh-mcp-server-deployment
+  labels:
+    app: zhuzh-mcp-server
+    app.kubernetes.io/name: zhuzh-mcp-server
+spec:
+  progressDeadlineSeconds: 1200
+  selector:
+    matchLabels:
+      app: zhuzh-mcp-server
+      app.kubernetes.io/name: zhuzh-mcp-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: zhuzh-mcp-server
+        app.kubernetes.io/name: zhuzh-mcp-server
+    spec:
+      containers:
+        - name: zhuzh-mcp-server
+          image: zhuzh-mcp-server
+          imagePullPolicy: Always
+          args:
+            - "--transport=http"
+          env:
+            - name: "CONFIGURATION_FILEPATH"
+              value: "/etc/service-config.json"
+            - name: "RUNNING_IN_KUBERNETES"
+              value: "true"
+            - name: "ZHUZH_OBSERVABILITY_METRICS_OTEL_SERVICE_NAME"
+              value: "dinner_done_better_mcp_server"
+            - name: "ZHUZH_OBSERVABILITY_TRACING_TRACING_SERVICE_NAME"
+              value: "dinner_done_better_mcp_server"
+            - name: "MCP_BASE_URL"
+              value: "https://mcp.zhuzh.dev"
+          volumeMounts:
+            - name: "config"
+              mountPath: "/etc/service-config.json"
+              subPath: "config.json"
+          ports:
+            - containerPort: 8888
+              name: http
+          livenessProbe:
+            httpGet:
+              path: "/_ops_/live"
+              port: 8888
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: "/_ops_/ready"
+              port: 8888
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: "config"
+          configMap:
+            name: "zhuzh-mcp-server-config"
+---

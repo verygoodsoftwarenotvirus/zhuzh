@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package webhooks;
+
+import "webhooks/webhooks_service_types.proto";
+
+option go_package = "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/grpc/generated/services/webhooks";
+
+service WebhooksService {
+  rpc ArchiveWebhook(ArchiveWebhookRequest) returns (ArchiveWebhookResponse);
+  rpc ArchiveWebhookTriggerConfig(ArchiveWebhookTriggerConfigRequest) returns (ArchiveWebhookTriggerConfigResponse);
+  rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse);
+  rpc AddWebhookTriggerConfig(AddWebhookTriggerConfigRequest) returns (AddWebhookTriggerConfigResponse);
+  rpc GetWebhook(GetWebhookRequest) returns (GetWebhookResponse);
+  rpc GetWebhooks(GetWebhooksRequest) returns (GetWebhooksResponse);
+  rpc CreateWebhookTriggerEvent(CreateWebhookTriggerEventRequest) returns (CreateWebhookTriggerEventResponse);
+  rpc GetWebhookTriggerEvent(GetWebhookTriggerEventRequest) returns (GetWebhookTriggerEventResponse);
+  rpc GetWebhookTriggerEvents(GetWebhookTriggerEventsRequest) returns (GetWebhookTriggerEventsResponse);
+  rpc UpdateWebhookTriggerEvent(UpdateWebhookTriggerEventRequest) returns (UpdateWebhookTriggerEventResponse);
+  rpc ArchiveWebhookTriggerEvent(ArchiveWebhookTriggerEventRequest) returns (ArchiveWebhookTriggerEventResponse);
+}

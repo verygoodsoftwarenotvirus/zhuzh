@@ -1,0 +1,22 @@
+---
+on:
+  pull_request:
+    paths:
+      - backend/scripts/**/*.sh
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+name: backend shellcheck
+jobs:
+  backend:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run shellcheck
+        working-directory: backend
+        run: make shellcheck

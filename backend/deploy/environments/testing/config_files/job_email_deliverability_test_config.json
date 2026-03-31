@@ -1,0 +1,38 @@
+{
+	"httpClient": null,
+	"recipientEmailAddress": "verygoodsoftwarenotvirus@protonmail.com",
+	"serviceEnvironment": "testing",
+	"observability": {
+		"profiling": {
+			"serviceName": "email_deliverability_test"
+		},
+		"logging": {
+			"serviceName": "email_deliverability_test",
+			"level": "info",
+			"provider": "slog"
+		},
+		"metrics": {
+			"serviceName": "email_deliverability_test"
+		},
+		"tracing": {
+			"service_name": "email_deliverability_test"
+		}
+	},
+	"email": {
+		"sendgrid": null,
+		"mailgun": null,
+		"mailjet": null,
+		"resend": null,
+		"postmark": null,
+		"provider": "",
+		"baseURL": "",
+		"outboundInvitesEmailAddress": "",
+		"passwordResetCreationEmailAddress": "",
+		"passwordResetRedemptionEmailAddress": "",
+		"circuitBreakerConfig": {
+			"name": "",
+			"circuitBreakerErrorPercentage": 0,
+			"circuitBreakerMinimumOccurrenceThreshold": 0
+		}
+	}
+}

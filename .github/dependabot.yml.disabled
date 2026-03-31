@@ -1,0 +1,67 @@
+# NOTE: 
+#
+# This service fucking sucks ass. It issues PRs for updates that it can't verify, i.e. updating the version of a github action without testing or triggering the upgrade.
+# As a consequence, please don't use this service. There be dragons. That said, you could activate this once to get a good picture of what all needs to be updated, but you should do the updates manually.
+
+version: 2
+updates:
+  # Go modules (backend)
+  - package-ecosystem: "gomod"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "go"
+
+  # GitHub Actions (workflows)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # Docker base images (backend deploy)
+  - package-ecosystem: "docker"
+    directory: "/backend/deploy/dockerfiles"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # Docker base images (testing / integration)
+  - package-ecosystem: "docker"
+    directory: "/backend/deploy/environments/testing/dockerfiles"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # Terraform (backend prod)
+  - package-ecosystem: "terraform"
+    directory: "/backend/deploy/environments/prod/terraform"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "terraform"
+
+  # Terraform (infra prod)
+  - package-ecosystem: "terraform"
+    directory: "/infra/deploy/environments/prod/terraform"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "terraform"

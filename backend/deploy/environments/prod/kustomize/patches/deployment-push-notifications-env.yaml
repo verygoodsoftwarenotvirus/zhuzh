@@ -1,0 +1,42 @@
+# Push notification env vars for async message handler (APNs + FCM)
+# Applied only to async message handler; uses api-service-config for secrets
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: ZHUZH_PUSH_NOTIFICATIONS_PROVIDER
+    valueFrom:
+      secretKeyRef:
+        name: api-service-config
+        key: PUSH_NOTIFICATIONS_PROVIDER
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: ZHUZH_PUSH_NOTIFICATIONS_APNS_KEY_ID
+    valueFrom:
+      secretKeyRef:
+        name: api-service-config
+        key: PUSH_NOTIFICATIONS_APNS_KEY_ID
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: ZHUZH_PUSH_NOTIFICATIONS_APNS_TEAM_ID
+    valueFrom:
+      secretKeyRef:
+        name: api-service-config
+        key: PUSH_NOTIFICATIONS_APNS_TEAM_ID
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: ZHUZH_PUSH_NOTIFICATIONS_APNS_BUNDLE_ID
+    valueFrom:
+      secretKeyRef:
+        name: api-service-config
+        key: PUSH_NOTIFICATIONS_APNS_BUNDLE_ID
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: ZHUZH_PUSH_NOTIFICATIONS_APNS_PRODUCTION
+    valueFrom:
+      secretKeyRef:
+        name: api-service-config
+        key: PUSH_NOTIFICATIONS_APNS_PRODUCTION

@@ -1,0 +1,305 @@
+{
+  "title": "Async Message Handler",
+  "uid": "ddb-async-message-handler",
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 0,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": false,
+        "iconColor": "blue",
+        "name": "Deployments",
+        "target": { "limit": 100, "matchAny": true, "tags": ["deployment", "production"], "type": "tags" },
+        "type": "tags"
+      },
+      {
+        "builtIn": 0,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": false,
+        "iconColor": "orange",
+        "name": "Terraform",
+        "target": { "limit": 100, "matchAny": true, "tags": ["terraform", "infra", "backend-infra"], "type": "tags" },
+        "type": "tags"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Messages Processed Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(async_message_handler_messages_processed_total{job=\"async_message_handler\"}[5m]))", "legendFormat": "Messages/s" }
+      ]
+    },
+    {
+      "title": "Handler Errors Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(async_message_handler_handler_errors_total{job=\"async_message_handler\"}[5m]))", "legendFormat": "Errors/s" }
+      ]
+    },
+    {
+      "title": "Search Index Requests - Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(async_message_handler_search_index_requests_execution_time_count{job=\"async_message_handler\"}[5m]))", "legendFormat": "Search index req/s" }
+      ]
+    },
+    {
+      "title": "Outbound Emails - Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(async_message_handler_messages_processed_total{job=\"async_message_handler\", topic=\"outbound_emails\"}[5m])) by (status)", "legendFormat": "{{status}}" }
+      ]
+    },
+    {
+      "title": "Outbound Emails - Errors",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 6 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(async_message_handler_handler_errors_total{job=\"async_message_handler\", topic=\"outbound_emails\"}[5m]))", "legendFormat": "Errors/s" }
+      ]
+    },
+    {
+      "title": "Outbound Emails - Latency",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 6 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.50, sum(rate(async_message_handler_outbound_emails_execution_time_bucket{job=\"async_message_handler\"}[5m])) by (le))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum(rate(async_message_handler_outbound_emails_execution_time_bucket{job=\"async_message_handler\"}[5m])) by (le))", "legendFormat": "p95" },
+        { "refId": "C", "expr": "histogram_quantile(0.99, sum(rate(async_message_handler_outbound_emails_execution_time_bucket{job=\"async_message_handler\"}[5m])) by (le))", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "title": "Search Index Requests - Latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.50, sum(rate(async_message_handler_search_index_requests_execution_time_bucket{job=\"async_message_handler\"}[5m])) by (le))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum(rate(async_message_handler_search_index_requests_execution_time_bucket{job=\"async_message_handler\"}[5m])) by (le))", "legendFormat": "p95" },
+        { "refId": "C", "expr": "histogram_quantile(0.99, sum(rate(async_message_handler_search_index_requests_execution_time_bucket{job=\"async_message_handler\"}[5m])) by (le))", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "title": "gRPC Client Latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.50, sum(rate(rpc_client_duration_milliseconds_bucket{job=\"async_message_handler\"}[5m])) by (le))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum(rate(rpc_client_duration_milliseconds_bucket{job=\"async_message_handler\"}[5m])) by (le))", "legendFormat": "p95" },
+        { "refId": "C", "expr": "histogram_quantile(0.99, sum(rate(rpc_client_duration_milliseconds_bucket{job=\"async_message_handler\"}[5m])) by (le))", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "title": "Queue Test Round-Trip Latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus" },
+      "description": "Round-trip latency for the queue_test cron job. Data appears after each run (every 15m) once the job flushes metrics on exit.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.50, sum(rate(queue_test_round_trip_ms_bucket{status=\"success\"}[5m])) by (le, topic))", "legendFormat": "{{topic}} p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum(rate(queue_test_round_trip_ms_bucket{status=\"success\"}[5m])) by (le, topic))", "legendFormat": "{{topic}} p95" },
+        { "refId": "C", "expr": "histogram_quantile(0.99, sum(rate(queue_test_round_trip_ms_bucket{status=\"success\"}[5m])) by (le, topic))", "legendFormat": "{{topic}} p99" }
+      ]
+    },
+    {
+      "title": "Queue Test Success vs Timeout",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(queue_test_round_trip_ms_count{status=\"success\"}[5m])) by (topic)", "legendFormat": "{{topic}} success" },
+        { "refId": "B", "expr": "sum(rate(queue_test_round_trip_ms_count{status=\"timeout\"}[5m])) by (topic)", "legendFormat": "{{topic}} timeout" }
+      ]
+    },
+    {
+      "title": "Deployment Replicas",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 28 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "kube_deployment_status_replicas_available{namespace=\"prod\", deployment=~\"zhuzh-async.*\"}", "legendFormat": "{{deployment}} available" },
+        { "refId": "B", "expr": "kube_deployment_spec_replicas{namespace=\"prod\", deployment=~\"zhuzh-async.*\"}", "legendFormat": "{{deployment}} desired" }
+      ]
+    },
+    {
+      "title": "Go Goroutines",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 28 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "process_runtime_go_goroutines{job=\"async_message_handler\"}", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "title": "Go Heap Allocated",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 28 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "process_runtime_go_mem_heap_alloc_bytes{job=\"async_message_handler\"}", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "title": "Host CPU",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 34 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(system_cpu_time_seconds_total{job=\"async_message_handler\"}[5m])) by (instance) * 100", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "title": "Host Memory",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 34 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "system_memory_usage_bytes{job=\"async_message_handler\"}", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "title": "Memory Utilization",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 34 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "system_memory_utilization_ratio{job=\"async_message_handler\"}", "legendFormat": "{{instance}}" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 0
+}

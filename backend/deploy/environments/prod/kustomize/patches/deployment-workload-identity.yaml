@@ -1,0 +1,4 @@
+# Workload Identity for GCP (Pub/Sub, Cloud SQL, etc). No CSI volume - we use api-service-config K8s secret.
+- op: add
+  path: "/spec/template/spec/serviceAccountName"
+  value: api-service-account

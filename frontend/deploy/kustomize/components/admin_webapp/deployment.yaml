@@ -1,0 +1,54 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zhuzh-admin-webapp-deployment
+  labels:
+    app: zhuzh-admin-webapp
+    app.kubernetes.io/name: zhuzh-admin-webapp
+spec:
+  progressDeadlineSeconds: 1200
+  selector:
+    matchLabels:
+      app: zhuzh-admin-webapp
+      app.kubernetes.io/name: zhuzh-admin-webapp
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: zhuzh-admin-webapp
+        app.kubernetes.io/name: zhuzh-admin-webapp
+    spec:
+      containers:
+        - name: zhuzh-admin-webapp
+          image: zhuzh-admin-webapp
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+          livenessProbe:
+            httpGet:
+              path: '/_ops_/live'
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: '/_ops_/ready'
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '50m'
+            limits:
+              memory: '512Mi'
+              cpu: '200m'
+          env:
+            - name: NODE_ENV
+              value: 'production'
+            - name: PORT
+              value: '3000'

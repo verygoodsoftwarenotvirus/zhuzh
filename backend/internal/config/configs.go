@@ -1,0 +1,450 @@
+package config
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"runtime/debug"
+	"time"
+
+	authcfg "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/authentication/config"
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/branding"
+
+	analyticscfg "github.com/verygoodsoftwarenotvirus/platform/v4/analytics/config"
+	databasecfg "github.com/verygoodsoftwarenotvirus/platform/v4/database/config"
+	emailcfg "github.com/verygoodsoftwarenotvirus/platform/v4/email/config"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/encoding"
+	featureflagscfg "github.com/verygoodsoftwarenotvirus/platform/v4/featureflags/config"
+	httpclientcfg "github.com/verygoodsoftwarenotvirus/platform/v4/httpclient"
+	msgconfig "github.com/verygoodsoftwarenotvirus/platform/v4/messagequeue/config"
+	notificationscfg "github.com/verygoodsoftwarenotvirus/platform/v4/notifications/mobile/config"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/logging"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/tracing"
+	routingcfg "github.com/verygoodsoftwarenotvirus/platform/v4/routing/config"
+	textsearchcfg "github.com/verygoodsoftwarenotvirus/platform/v4/search/text/config"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/server/grpc"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/server/http"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/uploads/objectstorage"
+
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/hashicorp/go-multierror"
+)
+
+const (
+	// DevelopmentRunMode is the run mode for a development environment.
+	DevelopmentRunMode runMode = "development"
+	// TestingRunMode is the run mode for a testing environment.
+	TestingRunMode runMode = "testing"
+	// ProductionRunMode is the run mode for a production environment.
+	ProductionRunMode runMode = "production"
+
+	EnvVarPrefix = branding.EnvVarPrefix
+
+	// ConfigurationFilePathEnvVarKey is the env var key we use to indicate where the config file is located.
+	ConfigurationFilePathEnvVarKey = "CONFIGURATION_FILEPATH"
+)
+
+type (
+	// runMode describes what method of operation the server is under.
+	runMode string
+
+	// CloserFunc calls all io.Closers in the service.
+	CloserFunc func()
+
+	configurations interface {
+		APIServiceConfig |
+			DBCleanerConfig |
+			SearchDataIndexSchedulerConfig |
+			MobileNotificationSchedulerConfig |
+			AsyncMessageHandlerConfig |
+			EmailDeliverabilityTestConfig |
+			QueueTestJobConfig |
+			MCPServiceConfig
+	}
+
+	// APIServiceConfig configures an instance of the service. It is composed of all the other setting structs.
+	APIServiceConfig struct {
+		_                 struct{}                `json:"-"`
+		HTTPClient        *httpclientcfg.Config   `envPrefix:"HTTP_CLIENT_"        json:"httpClient"`
+		Queues            msgconfig.QueuesConfig  `envPrefix:"QUEUES_"             json:"queues"`
+		PushNotifications notificationscfg.Config `envPrefix:"PUSH_NOTIFICATIONS_" json:"pushNotifications"`
+		Routing           routingcfg.Config       `envPrefix:"ROUTING_"            json:"routing"`
+		Encoding          encoding.Config         `envPrefix:"ENCODING_"           json:"encoding"`
+		BaseURL           string                  `env:"BASE_URL"                  json:"baseURL"`
+		Events            msgconfig.Config        `envPrefix:"EVENTS_"             json:"events"`
+		Observability     observability.Config    `envPrefix:"OBSERVABILITY_"      json:"observability"`
+		GRPCServer        grpc.Config             `envPrefix:"GRPC_"               json:"grpc"`
+		Meta              MetaSettings            `envPrefix:"META_"               json:"meta"`
+		Analytics         analyticscfg.Config     `envPrefix:"ANALYTICS_"          json:"analytics"`
+		Email             emailcfg.Config         `envPrefix:"EMAIL_"              json:"email"`
+		FeatureFlags      featureflagscfg.Config  `envPrefix:"FEATURE_FLAGS_"      json:"featureFlags"`
+		TextSearch        textsearchcfg.Config    `envPrefix:"SEARCH_"             json:"search"`
+		HTTPServer        http.Config             `envPrefix:"HTTP_"               json:"http"`
+		Auth              authcfg.Config          `envPrefix:"AUTH_"               json:"auth"`
+		Database          databasecfg.Config      `envPrefix:"DATABASE_"           json:"database"`
+		Services          ServicesConfig          `envPrefix:"SERVICE_"            json:"services"`
+		validateServices  bool
+	}
+
+	// DBCleanerConfig configures an instance of the database cleaner job.
+	DBCleanerConfig struct {
+		_ struct{} `json:"-"`
+
+		Observability observability.Config `envPrefix:"OBSERVABILITY_" json:"observability"`
+		Database      databasecfg.Config   `envPrefix:"DATABASE_"      json:"database"`
+	}
+
+	// SearchDataIndexSchedulerConfig configures an instance of the search data index scheduler job.
+	SearchDataIndexSchedulerConfig struct {
+		_ struct{} `json:"-"`
+
+		Queues        msgconfig.QueuesConfig `envPrefix:"QUEUES_"        json:"queues"`
+		Events        msgconfig.Config       `envPrefix:"EVENTS_"        json:"events"`
+		Observability observability.Config   `envPrefix:"OBSERVABILITY_" json:"observability"`
+		Database      databasecfg.Config     `envPrefix:"DATABASE_"      json:"database"`
+	}
+
+	// MobileNotificationSchedulerConfig configures an instance of the mobile notification scheduler job.
+	MobileNotificationSchedulerConfig struct {
+		_ struct{} `json:"-"`
+
+		Queues        msgconfig.QueuesConfig `envPrefix:"QUEUES_"        json:"queues"`
+		Events        msgconfig.Config       `envPrefix:"EVENTS_"        json:"events"`
+		Observability observability.Config   `envPrefix:"OBSERVABILITY_" json:"observability"`
+		Database      databasecfg.Config     `envPrefix:"DATABASE_"      json:"database"`
+	}
+
+	// AsyncMessageHandlerConfig configures an instance of the search data index scheduler job.
+	AsyncMessageHandlerConfig struct {
+		_                 struct{}                `json:"-"`
+		HTTPClient        *httpclientcfg.Config   `envPrefix:"HTTP_CLIENT_"        json:"httpClient"`
+		Queues            msgconfig.QueuesConfig  `envPrefix:"QUEUES_"             json:"queues"`
+		Storage           objectstorage.Config    `envPrefix:"STORAGE_"            json:"storage"`
+		PushNotifications notificationscfg.Config `envPrefix:"PUSH_NOTIFICATIONS_" json:"pushNotifications"`
+		Encoding          encoding.Config         `envPrefix:"ENCODING_"           json:"encoding"`
+		BaseURL           string                  `env:"BASE_URL"                  json:"baseURL"`
+		Events            msgconfig.Config        `envPrefix:"EVENTS_"             json:"events"`
+		Observability     observability.Config    `envPrefix:"OBSERVABILITY_"      json:"observability"`
+		Analytics         analyticscfg.Config     `envPrefix:"ANALYTICS_"          json:"analytics"`
+		Email             emailcfg.Config         `envPrefix:"EMAIL_"              json:"email"`
+		Search            textsearchcfg.Config    `envPrefix:"SEARCH_"             json:"search"`
+		Database          databasecfg.Config      `envPrefix:"DATABASE_"           json:"database"`
+	}
+
+	// EmailDeliverabilityTestConfig configures the email deliverability test cron job.
+	EmailDeliverabilityTestConfig struct {
+		_                     struct{}              `json:"-"`
+		HTTPClient            *httpclientcfg.Config `envPrefix:"HTTP_CLIENT_"      json:"httpClient"`
+		RecipientEmailAddress string                `env:"RECIPIENT_EMAIL_ADDRESS" json:"recipientEmailAddress"`
+		ServiceEnvironment    string                `env:"SERVICE_ENVIRONMENT"     json:"serviceEnvironment"`
+		Observability         observability.Config  `envPrefix:"OBSERVABILITY_"    json:"observability"`
+		Email                 emailcfg.Config       `envPrefix:"EMAIL_"            json:"email"`
+	}
+
+	// QueueTestJobConfig configures the queue test cron job.
+	QueueTestJobConfig struct {
+		_             struct{}               `json:"-"`
+		Queues        msgconfig.QueuesConfig `envPrefix:"QUEUES_"        json:"queues"`
+		Events        msgconfig.Config       `envPrefix:"EVENTS_"        json:"events"`
+		Observability observability.Config   `envPrefix:"OBSERVABILITY_" json:"observability"`
+		Database      databasecfg.Config     `envPrefix:"DATABASE_"      json:"database"`
+	}
+
+	APIServiceOAuth2ConnectionConfig struct {
+		_ struct{} `json:"-"`
+
+		HTTPAPIServerURL      string `env:"HTTP_API_SERVER_URL"      json:"httpAPIServerURL"`
+		GRPCAPIServerURL      string `env:"GRPC_API_SERVER_URL"      json:"grpcAPIServerURL"`
+		OAuth2APIClientID     string `env:"OAUTH2_API_CLIENT_ID"     json:"oauth2APIClientID"`
+		OAuth2APIClientSecret string `env:"OAUTH2_API_CLIENT_SECRET" json:"oauth2APIClientSecret"`
+	}
+
+	APIServiceUserConnectionConfig struct {
+		_ struct{} `json:"-"`
+
+		HTTPAPIServerURL      string `env:"HTTP_API_SERVER_URL"      json:"httpAPIServerURL"`
+		GRPCAPIServerURL      string `env:"GRPC_API_SERVER_URL"      json:"grpcAPIServerURL"`
+		Username              string `env:"USERNAME"                 json:"username"`
+		Password              string `env:"PASSWORD"                 json:"password"`
+		OAuth2APIClientID     string `env:"OAUTH2_API_CLIENT_ID"     json:"oauth2APIClientID"`
+		OAuth2APIClientSecret string `env:"OAUTH2_API_CLIENT_SECRET" json:"oauth2APIClientSecret"`
+	}
+
+	NamedCacheConfig struct {
+		_ struct{} `json:"-"`
+
+		CacheCapacity uint64        `env:"CACHE_CAPACITY" json:"cacheCapacity"`
+		CacheTTL      time.Duration `env:"CACHE_TTL"      json:"cacheTTL"`
+	}
+
+	// AppleAppSiteAssociationConfig holds configuration for the apple-app-site-association file
+	// used by iOS for Universal Links. See: https://developer.apple.com/documentation/xcode/supporting-associated-domains
+	AppleAppSiteAssociationConfig struct {
+		_ struct{} `json:"-"`
+
+		// TeamID is the Apple Developer Team ID (e.g., "ABCD1234XY").
+		// This can be found in the Apple Developer Portal under Membership.
+		TeamID string `env:"TEAM_ID" json:"teamID,omitempty"`
+		// BundleID is the iOS app bundle identifier (e.g., "com.zhuzh.ios").
+		BundleID string `env:"BUNDLE_ID" json:"bundleID,omitempty"`
+	}
+
+	// MCPServiceConfig configures an instance of the service. It is composed of all the other setting structs.
+	MCPServiceConfig struct {
+		_ struct{} `json:"-"`
+
+		APIServiceConnection APIServiceUserConnectionConfig `envPrefix:"API_SERVICE_"   json:"apiServiceConfig"`
+		Observability        observability.Config           `envPrefix:"OBSERVABILITY_" json:"observability"`
+		Routing              routingcfg.Config              `envPrefix:"ROUTING_"       json:"routing"`
+		GRPCServer           grpc.Config                    `envPrefix:"GRPC_"          json:"grpc"`
+		Meta                 MetaSettings                   `envPrefix:"META_"          json:"meta"`
+		HTTPServer           http.Config                    `envPrefix:"HTTP_"          json:"http"`
+	}
+)
+
+// EncodeToFile renders your config to a file given your favorite encoder.
+func (cfg *APIServiceConfig) EncodeToFile(path string, marshaller func(v any) ([]byte, error)) error {
+	if cfg == nil {
+		return errors.New("nil config")
+	}
+
+	byteSlice, err := marshaller(*cfg)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(path, byteSlice, 0o600) //nolint:gosec // G703: path from caller; caller must pass trusted path
+}
+
+func (cfg *APIServiceConfig) Commit() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for i := range info.Settings {
+			if info.Settings[i].Key == "vcs.revision" {
+				return info.Settings[i].Value
+			}
+		}
+	}
+
+	return ""
+}
+
+var _ validation.ValidatableWithContext = (*APIServiceConfig)(nil)
+
+// ValidateWithContext validates a APIServiceConfig struct.
+func (cfg *APIServiceConfig) ValidateWithContext(ctx context.Context) error {
+	result := &multierror.Error{}
+
+	validators := map[string]func(context.Context) error{
+		"Routing":       cfg.Routing.ValidateWithContext,
+		"Meta":          cfg.Meta.ValidateWithContext,
+		"Queues":        cfg.Queues.ValidateWithContext,
+		"Encoding":      cfg.Encoding.ValidateWithContext,
+		"Analytics":     cfg.Analytics.ValidateWithContext,
+		"Observability": cfg.Observability.ValidateWithContext,
+		"Database":      cfg.Database.ValidateWithContext,
+		"HTTPServer":    cfg.HTTPServer.ValidateWithContext,
+		"Email":         cfg.Email.ValidateWithContext,
+		"FeatureFlags":  cfg.FeatureFlags.ValidateWithContext,
+		"TextSearch":    cfg.TextSearch.ValidateWithContext,
+		// no "Events" here, that's a collection of publisher/subscriber configs that can each optionally be setup
+	}
+
+	if cfg.validateServices {
+		validators["Services"] = cfg.Services.ValidateWithContext
+	}
+
+	for name, validator := range validators {
+		if err := validator(ctx); err != nil {
+			result = multierror.Append(fmt.Errorf("error validating %s config: %w", name, err), result)
+		}
+	}
+
+	return result.ErrorOrNil()
+}
+
+var _ validation.ValidatableWithContext = (*DBCleanerConfig)(nil)
+
+// ValidateWithContext validates a DBCleanerConfig struct.
+func (cfg *DBCleanerConfig) ValidateWithContext(ctx context.Context) error {
+	result := &multierror.Error{}
+
+	validators := map[string]func(context.Context) error{
+		"Observability": cfg.Observability.ValidateWithContext,
+		"Database":      cfg.Database.ValidateWithContext,
+	}
+
+	for name, validator := range validators {
+		if err := validator(ctx); err != nil {
+			result = multierror.Append(fmt.Errorf("error validating %s config: %w", name, err), result)
+		}
+	}
+
+	return result.ErrorOrNil()
+}
+
+var _ validation.ValidatableWithContext = (*SearchDataIndexSchedulerConfig)(nil)
+
+// ValidateWithContext validates a SearchDataIndexSchedulerConfig struct.
+func (cfg *SearchDataIndexSchedulerConfig) ValidateWithContext(ctx context.Context) error {
+	result := &multierror.Error{}
+
+	validators := map[string]func(context.Context) error{
+		"Observability": cfg.Observability.ValidateWithContext,
+		"Database":      cfg.Database.ValidateWithContext,
+		"Queues":        cfg.Queues.ValidateWithContext,
+	}
+
+	for name, validator := range validators {
+		if err := validator(ctx); err != nil {
+			result = multierror.Append(fmt.Errorf("error validating %s config: %w", name, err), result)
+		}
+	}
+
+	return result.ErrorOrNil()
+}
+
+var _ validation.ValidatableWithContext = (*MobileNotificationSchedulerConfig)(nil)
+
+// ValidateWithContext validates a MobileNotificationSchedulerConfig struct.
+func (cfg *MobileNotificationSchedulerConfig) ValidateWithContext(ctx context.Context) error {
+	result := &multierror.Error{}
+
+	validators := map[string]func(context.Context) error{
+		"Observability": cfg.Observability.ValidateWithContext,
+		"Database":      cfg.Database.ValidateWithContext,
+		"Queues":        cfg.Queues.ValidateWithContext,
+	}
+
+	for name, validator := range validators {
+		if err := validator(ctx); err != nil {
+			result = multierror.Append(fmt.Errorf("error validating %s config: %w", name, err), result)
+		}
+	}
+
+	return result.ErrorOrNil()
+}
+
+var _ validation.ValidatableWithContext = (*AsyncMessageHandlerConfig)(nil)
+
+// ValidateWithContext validates a AsyncMessageHandlerConfig struct.
+func (cfg *AsyncMessageHandlerConfig) ValidateWithContext(ctx context.Context) error {
+	result := &multierror.Error{}
+
+	validators := map[string]func(context.Context) error{
+		"Queues":        cfg.Queues.ValidateWithContext,
+		"Analytics":     cfg.Analytics.ValidateWithContext,
+		"Observability": cfg.Observability.ValidateWithContext,
+		"Database":      cfg.Database.ValidateWithContext,
+		"Email":         cfg.Email.ValidateWithContext,
+		"TextSearch":    cfg.Search.ValidateWithContext,
+		"Storage":       cfg.Storage.ValidateWithContext,
+	}
+
+	for name, validator := range validators {
+		if err := validator(ctx); err != nil {
+			result = multierror.Append(fmt.Errorf("error validating %s config: %w", name, err), result)
+		}
+	}
+
+	return result.ErrorOrNil()
+}
+
+var _ validation.ValidatableWithContext = (*EmailDeliverabilityTestConfig)(nil)
+
+// ValidateWithContext validates an EmailDeliverabilityTestConfig struct.
+func (cfg *EmailDeliverabilityTestConfig) ValidateWithContext(ctx context.Context) error {
+	return validation.ValidateStructWithContext(
+		ctx,
+		cfg,
+		validation.Field(&cfg.Observability, validation.Required),
+		validation.Field(&cfg.Email, validation.Required),
+		validation.Field(&cfg.RecipientEmailAddress, validation.Required),
+	)
+}
+
+var _ validation.ValidatableWithContext = (*QueueTestJobConfig)(nil)
+
+// ValidateWithContext validates a QueueTestJobConfig struct.
+func (cfg *QueueTestJobConfig) ValidateWithContext(ctx context.Context) error {
+	result := &multierror.Error{}
+
+	validators := map[string]func(context.Context) error{
+		"Observability": cfg.Observability.ValidateWithContext,
+		"Database":      cfg.Database.ValidateWithContext,
+		"Queues":        cfg.Queues.ValidateWithContext,
+	}
+
+	for name, validator := range validators {
+		if err := validator(ctx); err != nil {
+			result = multierror.Append(fmt.Errorf("error validating %s config: %w", name, err), result)
+		}
+	}
+
+	return result.ErrorOrNil()
+}
+
+var _ validation.ValidatableWithContext = (*MCPServiceConfig)(nil)
+
+// ValidateWithContext validates a MCPServiceConfig struct.
+func (cfg *MCPServiceConfig) ValidateWithContext(ctx context.Context) error {
+	result := &multierror.Error{}
+
+	validators := map[string]func(context.Context) error{
+		"Meta":          cfg.Meta.ValidateWithContext,
+		"Observability": cfg.Observability.ValidateWithContext,
+		"Routing":       cfg.Routing.ValidateWithContext,
+		"HTTPServer":    cfg.HTTPServer.ValidateWithContext,
+	}
+
+	for name, validator := range validators {
+		if err := validator(ctx); err != nil {
+			result = multierror.Append(fmt.Errorf("error validating %s config: %w", name, err), result)
+		}
+	}
+
+	return result.ErrorOrNil()
+}
+
+func LoadConfigFromEnvironment[T configurations]() (*T, error) {
+	configFilepath := os.Getenv(ConfigurationFilePathEnvVarKey)
+
+	configBytes, err := os.ReadFile(configFilepath) //nolint:gosec // G703: path from env var (deployer-configured)
+	if err != nil {
+		return nil, fmt.Errorf("reading local config file: %w", err)
+	}
+
+	var cfg *T
+	if err = json.NewDecoder(bytes.NewReader(configBytes)).Decode(&cfg); err != nil || cfg == nil {
+		return nil, fmt.Errorf("decoding config file (%s) contents (%s): %w", configFilepath, string(configBytes), err)
+	}
+
+	if err = ApplyEnvironmentVariables(cfg); err != nil {
+		return nil, fmt.Errorf("applying environment variables: %w", err)
+	}
+
+	return cfg, nil
+}
+
+func LoadConfigFromPath[T configurations](ctx context.Context, configurationFilepath string) (*T, error) {
+	content, err := os.ReadFile(configurationFilepath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read api configuration file: %w", err)
+	}
+
+	decoder := encoding.ProvideServerEncoderDecoder(logging.NewNoopLogger(), tracing.NewNoopTracerProvider(), encoding.ContentTypeJSON)
+
+	var x *T
+	if err = decoder.DecodeBytes(ctx, content, &x); err != nil {
+		return nil, fmt.Errorf("failed to decode api configuration file: %w", err)
+	}
+
+	if err = ApplyEnvironmentVariables(x); err != nil {
+		return nil, fmt.Errorf("applying environment variables: %w", err)
+	}
+
+	return x, nil
+}

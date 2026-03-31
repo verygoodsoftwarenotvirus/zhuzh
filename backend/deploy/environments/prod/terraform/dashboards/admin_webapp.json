@@ -1,0 +1,201 @@
+{
+  "title": "Admin Webapp",
+  "uid": "ddb-admin-webapp",
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 0,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": false,
+        "iconColor": "blue",
+        "name": "Deployments",
+        "target": { "limit": 100, "matchAny": true, "tags": ["deployment", "production"], "type": "tags" },
+        "type": "tags"
+      },
+      {
+        "builtIn": 0,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": false,
+        "iconColor": "orange",
+        "name": "Terraform",
+        "target": { "limit": 100, "matchAny": true, "tags": ["terraform", "infra", "backend-infra"], "type": "tags" },
+        "type": "tags"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Request Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(http_server_request_duration_seconds_count{job=\"admin_webapp\"}[5m]))", "legendFormat": "Requests/s" }
+      ]
+    },
+    {
+      "title": "Error Rate (5xx)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(http_server_request_body_size_bytes_count{job=\"admin_webapp\", http_response_status_code=~\"5..\"}[5m]))", "legendFormat": "5xx/s" }
+      ]
+    },
+    {
+      "title": "Request Latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.50, sum(rate(http_server_request_duration_seconds_bucket{job=\"admin_webapp\"}[5m])) by (le))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{job=\"admin_webapp\"}[5m])) by (le))", "legendFormat": "p95" },
+        { "refId": "C", "expr": "histogram_quantile(0.99, sum(rate(http_server_request_duration_seconds_bucket{job=\"admin_webapp\"}[5m])) by (le))", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "title": "Response Size (p95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum(rate(http_server_response_body_size_bytes_bucket{job=\"admin_webapp\"}[5m])) by (le))", "legendFormat": "p95" }
+      ]
+    },
+    {
+      "title": "Deployment Replicas",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "kube_deployment_status_replicas_available{namespace=\"prod\", deployment=~\"zhuzh-admin.*\"}", "legendFormat": "{{deployment}} available" },
+        { "refId": "B", "expr": "kube_deployment_spec_replicas{namespace=\"prod\", deployment=~\"zhuzh-admin.*\"}", "legendFormat": "{{deployment}} desired" }
+      ]
+    },
+    {
+      "title": "Go Goroutines",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 14 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "process_runtime_go_goroutines{job=\"admin_webapp\"}", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "title": "Go Heap Allocated",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 14 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "process_runtime_go_mem_heap_alloc_bytes{job=\"admin_webapp\"}", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "title": "Host CPU",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(system_cpu_time_seconds_total{job=\"admin_webapp\"}[5m])) by (instance) * 100", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "title": "Host Memory",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 20 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "system_memory_usage_bytes{job=\"admin_webapp\"}", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "title": "Memory Utilization",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 20 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "system_memory_utilization_ratio{job=\"admin_webapp\"}", "legendFormat": "{{instance}}" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 0
+}

@@ -1,0 +1,303 @@
+---
+# See: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# See: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/resource/
+resources:
+  - ../../../kustomize/components/api_server
+  - ../../../kustomize/components/workers
+  - ../../../kustomize/components/async_functions
+  - ../../../kustomize/components/mcp_server
+
+images:
+  - name: zhuzh-service-api
+    newName: us-central1-docker.pkg.dev/zhuzh-prod/containers/zhuzh-service-api
+    newTag: latest
+
+  - name: zhuzh-job-db-cleaner
+    newName: us-central1-docker.pkg.dev/zhuzh-prod/containers/zhuzh-job-db-cleaner
+    newTag: latest
+
+  - name: zhuzh-job-email-deliverability-test
+    newName: us-central1-docker.pkg.dev/zhuzh-prod/containers/zhuzh-job-email-deliverability-test
+    newTag: latest
+
+  - name: zhuzh-job-queue-test
+    newName: us-central1-docker.pkg.dev/zhuzh-prod/containers/zhuzh-job-queue-test
+    newTag: latest
+
+  - name: zhuzh-job-search-data-index-scheduler
+    newName: us-central1-docker.pkg.dev/zhuzh-prod/containers/zhuzh-job-search-data-index-scheduler
+    newTag: latest
+
+  - name: zhuzh-job-mobile-notification-scheduler
+    newName: us-central1-docker.pkg.dev/zhuzh-prod/containers/zhuzh-job-mobile-notification-scheduler
+    newTag: latest
+
+  - name: zhuzh-async-message-handler
+    newName: us-central1-docker.pkg.dev/zhuzh-prod/containers/zhuzh-async-message-handler
+    newTag: latest
+
+  - name: zhuzh-mcp-server
+    newName: us-central1-docker.pkg.dev/zhuzh-prod/containers/zhuzh-mcp-server
+    newTag: latest
+
+# See: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patches/
+patches:
+  ### API Server - needs database, pubsub, service secrets (from Terraform api-service-config), workload identity
+  - path: patches/deployment-workload-identity.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-service-api-deployment
+  - path: patches/deployment-database-env.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-service-api-deployment
+  - path: patches/deployment-database-password-api-server.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-service-api-deployment
+  - path: patches/deployment-pubsub-env.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-service-api-deployment
+  - path: patches/deployment-service-secrets-env.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-service-api-deployment
+  - path: patches/deployment-tracing-env.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-service-api-deployment
+
+  ### Pyroscope (Grafana Cloud) - API server only; uncomment to enable for other workloads
+  - path: patches/deployment-pyroscope-env.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-service-api-deployment
+  # - path: patches/deployment-pyroscope-env.yaml
+  #   target:
+  #     version: v1
+  #     kind: Deployment
+  #     name: zhuzh-async-message-handler-deployment
+  # - path: patches/deployment-pyroscope-env.yaml
+  #   target:
+  #     version: v1
+  #     kind: Deployment
+  #     name: zhuzh-admin-webapp-deployment
+  # - path: patches/cronjob-pyroscope-env.yaml
+  #   target:
+  #     kind: CronJob
+  #     name: zhuzh-job-db-cleaner
+  # - path: patches/cronjob-pyroscope-env.yaml
+  #   target:
+  #     kind: CronJob
+  #     name: zhuzh-job-email-deliverability-test
+  # - path: patches/cronjob-pyroscope-env.yaml
+  #   target:
+  #     kind: CronJob
+  #     name: zhuzh-job-queue-test
+  # - path: patches/cronjob-pyroscope-env.yaml
+  #   target:
+  #     kind: CronJob
+  #     name: zhuzh-job-search-data-index-scheduler
+  # - path: patches/cronjob-pyroscope-env.yaml
+  #   target:
+  #     kind: CronJob
+  #     name: zhuzh-job-mobile-notification-scheduler
+
+  ### Async Message Handler - needs database, pubsub, service secrets, environment, workload identity
+  - path: patches/deployment-workload-identity.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-async-message-handler-deployment
+  - path: patches/deployment-database-env.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-async-message-handler-deployment
+  - path: patches/deployment-database-password-async-message-handler.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-async-message-handler-deployment
+  - path: patches/deployment-pubsub-env.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-async-message-handler-deployment
+  - path: patches/deployment-service-secrets-env.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-async-message-handler-deployment
+  - path: patches/deployment-push-notifications-env.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-async-message-handler-deployment
+  - path: patches/deployment-apns-volume.yaml
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-async-message-handler-deployment
+  - patch: |-
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: ZHUZH_SERVICE_ENVIRONMENT
+          value: prod
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-async-message-handler-deployment
+
+  ### CronJobs - workload identity (api-service-account) for GCP Pub/Sub, Secret Manager
+  - path: patches/cronjob-secrets-csi-volume.yaml
+    target:
+      kind: CronJob
+
+  ### Email Deliverability Test CronJob - needs Resend API key
+  - path: patches/cronjob-resend-env.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-email-deliverability-test
+
+  ### Queue Test CronJob - needs database, pubsub
+  - path: patches/cronjob-database-env.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-queue-test
+  - path: patches/cronjob-database-password-queue-test.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-queue-test
+  - path: patches/cronjob-pubsub-env.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-queue-test
+
+  ### DB Cleaner CronJob - needs database only
+  - path: patches/cronjob-database-env.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-db-cleaner
+  - path: patches/cronjob-database-password-db-cleaner.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-db-cleaner
+
+  ### Search Data Index Scheduler CronJob - needs database, pubsub
+  - path: patches/cronjob-database-env.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-search-data-index-scheduler
+  - path: patches/cronjob-database-password-search-data-index-scheduler.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-search-data-index-scheduler
+  - path: patches/cronjob-pubsub-env.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-search-data-index-scheduler
+
+  ### Mobile Notification Scheduler CronJob - needs database, pubsub
+  - path: patches/cronjob-database-env.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-mobile-notification-scheduler
+  - path: patches/cronjob-database-password-mobile-notification-scheduler.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-mobile-notification-scheduler
+  - path: patches/cronjob-pubsub-env.yaml
+    target:
+      kind: CronJob
+      name: zhuzh-job-mobile-notification-scheduler
+
+  ### MCP Server - OAuth credentials from mcp-server-config secret (API URLs are in config JSON)
+  - patch: |-
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: ZHUZH_API_SERVICE_OAUTH2_API_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: mcp-server-config
+              key: OAUTH2_CLIENT_ID
+      - op: add
+        path: "/spec/template/spec/containers/0/env/-"
+        value:
+          name: ZHUZH_API_SERVICE_OAUTH2_API_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mcp-server-config
+              key: OAUTH2_CLIENT_SECRET
+    target:
+      version: v1
+      kind: Deployment
+      name: zhuzh-mcp-server-deployment
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: zhuzh-backend
+      deployed_by: skaffold
+
+configMapGenerator:
+  - name: zhuzh-service-api-config
+    namespace: prod
+    files:
+      - config.json=./configs/api_service_config.json
+
+  - name: zhuzh-async-message-handler-config
+    namespace: prod
+    files:
+      - config.json=./configs/async_message_handler_config.json
+
+  - name: zhuzh-job-db-cleaner-config
+    namespace: prod
+    files:
+      - config.json=./configs/job_db_cleaner_config.json
+
+  - name: zhuzh-job-email-deliverability-test-config
+    namespace: prod
+    files:
+      - config.json=./configs/job_email_deliverability_test_config.json
+
+  - name: zhuzh-job-queue-test-config
+    namespace: prod
+    files:
+      - config.json=./configs/job_queue_test_config.json
+
+  - name: zhuzh-job-search-data-index-scheduler-config
+    namespace: prod
+    files:
+      - config.json=./configs/job_search_data_index_scheduler_config.json
+
+  - name: zhuzh-job-mobile-notification-scheduler-config
+    namespace: prod
+    files:
+      - config.json=./configs/job_mobile_notification_scheduler_config.json
+
+  - name: zhuzh-mcp-server-config
+    namespace: prod
+    files:
+      - config.json=./configs/mcp_server_config.json
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    generated_by: skaffold
+    deployed_by: skaffold
+  annotations:
+    generated_by: skaffold
+    deployed_by: skaffold

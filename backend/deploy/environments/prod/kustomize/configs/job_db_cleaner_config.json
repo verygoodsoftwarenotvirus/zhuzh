@@ -1,0 +1,78 @@
+{
+	"observability": {
+		"profiling": {
+			"pyroscope": {
+				"serverAddress": "https://profiles-prod-001.grafana.net",
+				"uploadRate": 15000000000,
+				"insecure": false,
+				"enableMutexProfile": false,
+				"enableBlockProfile": false
+			},
+			"serviceName": "db_cleaner",
+			"provider": "pyroscope"
+		},
+		"logging": {
+			"serviceName": "db_cleaner",
+			"level": "info",
+			"otelslog": {
+				"endpointURL": "otel-collector-svc.prod.svc.cluster.local:4317",
+				"insecure": true,
+				"timeout": 2000000000
+			},
+			"provider": "otelslog"
+		},
+		"metrics": {
+			"otelgrpc": {
+				"metricsCollectorEndpoint": "otel-collector-svc.prod.svc.cluster.local:4317",
+				"collectionInterval": 30000000000,
+				"insecure": true,
+				"enableRuntimeMetrics": false,
+				"enableHostMetrics": false
+			},
+			"serviceName": "db_cleaner",
+			"provider": "otelgrpc"
+		},
+		"tracing": {
+			"otelgrpc": {
+				"collector_endpoint": "otel-collector-svc.prod.svc.cluster.local:4317",
+				"insecure": true
+			},
+			"service_name": "db_cleaner",
+			"provider": "otelgrpc",
+			"spanCollectionProbability": 1
+		}
+	},
+	"database": {
+		"encryption": {
+			"provider": "salsa20"
+		},
+		"oauth2TokenEncryptionKey": "",
+		"userDeviceTokenEncryptionKey": "",
+		"provider": "postgres",
+		"readConnection": {
+			"username": "db_cleaner",
+			"password": "",
+			"database": "zhuzh",
+			"hostname": "",
+			"port": 5432,
+			"disableSSL": false
+		},
+		"writeConnection": {
+			"username": "db_cleaner",
+			"password": "",
+			"database": "zhuzh",
+			"hostname": "",
+			"port": 5432,
+			"disableSSL": false
+		},
+		"pingWaitPeriod": 1000000000,
+		"maxPingAttempts": 50,
+		"connMaxLifetime": 1800000000000,
+		"maxIdleConns": 5,
+		"maxOpenConns": 7,
+		"debug": false,
+		"logQueries": false,
+		"runMigrations": true,
+		"enableDatabaseMetrics": false
+	}
+}

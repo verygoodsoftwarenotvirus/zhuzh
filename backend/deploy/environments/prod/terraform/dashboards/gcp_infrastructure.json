@@ -1,0 +1,182 @@
+{
+  "title": "GCP Infrastructure",
+  "uid": "ddb-gcp-infrastructure",
+  "timezone": "browser",
+  "refresh": "1m",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 0,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": false,
+        "iconColor": "blue",
+        "name": "Deployments",
+        "target": { "limit": 100, "matchAny": true, "tags": ["deployment", "production"], "type": "dashboard" },
+        "type": "dashboard"
+      },
+      {
+        "builtIn": 0,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": false,
+        "iconColor": "orange",
+        "name": "Terraform",
+        "target": { "limit": 100, "matchAny": true, "tags": ["terraform", "infra", "backend-infra"], "type": "dashboard" },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Kubernetes Node Count",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "count(kube_node_info)", "legendFormat": "Total nodes" }
+      ]
+    },
+    {
+      "title": "Node Status (Ready vs NotReady)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "count(kube_node_status_condition{condition=\"Ready\", status=\"true\"})", "legendFormat": "Ready" },
+        { "refId": "B", "expr": "count(kube_node_status_condition{condition=\"Ready\", status=\"false\"})", "legendFormat": "NotReady" }
+      ]
+    },
+    {
+      "title": "Pod Count by Phase",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10, "stacking": { "group": "A", "mode": "normal" } }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "sum(kube_pod_status_phase{namespace=\"prod\"}) by (phase)", "legendFormat": "{{phase}}" }
+      ],
+      "description": "Pods in prod namespace by lifecycle phase (Running, Pending, etc.)"
+    },
+    {
+      "title": "Pub/Sub - Undelivered Messages by Subscription",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "pubsub_googleapis_com_subscription_num_undelivered_messages", "legendFormat": "{{subscription_id}}" }
+      ],
+      "description": "Message backlog per subscription. Spikes may indicate consumer lag."
+    },
+    {
+      "title": "Pub/Sub - Oldest Unacked Message Age by Subscription",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "pubsub_googleapis_com_subscription_oldest_unacked_message_age", "legendFormat": "{{subscription_id}}" }
+      ],
+      "description": "Age of oldest unacked message. High values indicate consumer lag."
+    },
+    {
+      "title": "Deployment Replicas - Available vs Desired",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "kube_deployment_status_replicas_available{namespace=\"prod\"}", "legendFormat": "{{deployment}} available" },
+        { "refId": "B", "expr": "kube_deployment_spec_replicas{namespace=\"prod\"}", "legendFormat": "{{deployment}} desired" }
+      ]
+    },
+    {
+      "title": "Deployment Replicas Unavailable",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 22 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "kube_deployment_status_replicas_unavailable{namespace=\"prod\"}", "legendFormat": "{{deployment}}" }
+      ],
+      "description": "Replicas not yet available. Non-zero values may indicate rollout issues."
+    },
+    {
+      "title": "Deployment Replicas Updated",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 22 },
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "refId": "A", "expr": "kube_deployment_status_replicas_updated{namespace=\"prod\"}", "legendFormat": "{{deployment}}" }
+      ],
+      "description": "Replicas running the latest spec. During rollouts, this lags behind desired."
+    },
+    {
+      "title": "Cloud SQL (when available)",
+      "type": "text",
+      "gridPos": { "h": 3, "w": 24, "x": 0, "y": 28 },
+      "options": {
+        "content": "Cloud SQL metrics (CPU, memory, disk) are configured in the OTEL collector but may not appear in Prometheus. If you add the **Google Cloud Monitoring** datasource in Grafana, you can query them directly. Or run `{__name__=~\".*database.*\"}` in Explore to discover metric names.",
+        "mode": "markdown"
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 0
+}

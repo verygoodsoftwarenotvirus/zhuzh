@@ -1,0 +1,54 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zhuzh-consumer-webapp-deployment
+  labels:
+    app: zhuzh-consumer-webapp
+    app.kubernetes.io/name: zhuzh-consumer-webapp
+spec:
+  progressDeadlineSeconds: 1200
+  selector:
+    matchLabels:
+      app: zhuzh-consumer-webapp
+      app.kubernetes.io/name: zhuzh-consumer-webapp
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: zhuzh-consumer-webapp
+        app.kubernetes.io/name: zhuzh-consumer-webapp
+    spec:
+      containers:
+        - name: zhuzh-consumer-webapp
+          image: zhuzh-consumer-webapp
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+          livenessProbe:
+            httpGet:
+              path: '/_ops_/live'
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: '/_ops_/ready'
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: '128Mi'
+              cpu: '50m'
+            limits:
+              memory: '256Mi'
+              cpu: '200m'
+          env:
+            - name: NODE_ENV
+              value: 'production'
+            - name: PORT
+              value: '3000'
