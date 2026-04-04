@@ -6,7 +6,7 @@
 import UIKit
 
 /// Prepares image data for upload. Converts HEIC to JPEG when needed, preserves
-/// format for PNG/JPEG/GIF. Use for avatar, recipe, meal, or any image upload.
+/// format for PNG/JPEG/GIF. Use for avatar, or any image upload.
 public enum ImagePreparationHelper {
   public struct PreparedImage: Sendable {
     public let data: Data

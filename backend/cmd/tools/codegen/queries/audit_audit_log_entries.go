@@ -32,7 +32,7 @@ var (
 
 func buildAuditLogEntryQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		insertColumns := filterForInsert(auditLogsColumns)
 		fullSelectColumns := applyToEach(auditLogsColumns, func(_ int, s string) string {
@@ -87,10 +87,10 @@ FROM %s
 WHERE %s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(auditLogsTableName, false, false, []string{}, fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToUserColumn, belongsToUserColumn)),
+					buildFilterCountSelect(auditLogsTableName, database, false, false, []string{}, fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToUserColumn, belongsToUserColumn)),
 					buildTotalCountSelect(auditLogsTableName, false, []string{}, fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToUserColumn, belongsToUserColumn)),
 					auditLogsTableName,
-					strings.TrimPrefix(buildFilterConditions(auditLogsTableName, false, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToUserColumn, belongsToUserColumn)), "AND "),
+					strings.TrimPrefix(buildFilterConditions(auditLogsTableName, database, false, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToUserColumn, belongsToUserColumn)), "AND "),
 					buildCursorLimitClause(auditLogsTableName),
 				)),
 			},
@@ -109,21 +109,22 @@ WHERE %s
 					strings.Join(fullSelectColumns, ",\n\t"),
 					buildFilterCountSelect(
 						auditLogsTableName,
+						database,
 						false,
 						false,
 						nil,
 						fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToUserColumn, belongsToUserColumn),
-						fmt.Sprintf("%s.%s = ANY(sqlc.arg(%s)::text[])", auditLogsTableName, resourceTypeColumn, "resources"),
+						anyInExpression(database, fmt.Sprintf("%s.%s", auditLogsTableName, resourceTypeColumn), "resources"),
 					),
 					buildTotalCountSelect(
 						auditLogsTableName,
 						false,
 						nil,
 						fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToUserColumn, belongsToUserColumn),
-						fmt.Sprintf("%s.%s = ANY(sqlc.arg(%s)::text[])", auditLogsTableName, resourceTypeColumn, "resources"),
+						anyInExpression(database, fmt.Sprintf("%s.%s", auditLogsTableName, resourceTypeColumn), "resources"),
 					),
 					auditLogsTableName,
-					strings.TrimPrefix(buildFilterConditions(auditLogsTableName, false, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToUserColumn, belongsToUserColumn), fmt.Sprintf("%s.%s = ANY(sqlc.arg(%s)::text[])", auditLogsTableName, resourceTypeColumn, "resources")), "AND "),
+					strings.TrimPrefix(buildFilterConditions(auditLogsTableName, database, false, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToUserColumn, belongsToUserColumn), anyInExpression(database, fmt.Sprintf("%s.%s", auditLogsTableName, resourceTypeColumn), "resources")), "AND "),
 					buildCursorLimitClause(auditLogsTableName),
 				)),
 			},
@@ -142,6 +143,7 @@ WHERE %s
 					strings.Join(fullSelectColumns, ",\n\t"),
 					buildFilterCountSelect(
 						auditLogsTableName,
+						database,
 						false,
 						false,
 						[]string{},
@@ -149,7 +151,7 @@ WHERE %s
 					),
 					buildTotalCountSelect(auditLogsTableName, false, []string{}, fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToAccountColumn, belongsToAccountColumn)),
 					auditLogsTableName,
-					strings.TrimPrefix(buildFilterConditions(auditLogsTableName, false, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToAccountColumn, belongsToAccountColumn)), "AND "),
+					strings.TrimPrefix(buildFilterConditions(auditLogsTableName, database, false, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToAccountColumn, belongsToAccountColumn)), "AND "),
 					buildCursorLimitClause(auditLogsTableName),
 				)),
 			},
@@ -168,21 +170,22 @@ WHERE %s
 					strings.Join(fullSelectColumns, ",\n\t"),
 					buildFilterCountSelect(
 						auditLogsTableName,
+						database,
 						false,
 						false,
 						nil,
 						fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToAccountColumn, belongsToAccountColumn),
-						fmt.Sprintf("%s.%s = ANY(sqlc.arg(%s)::text[])", auditLogsTableName, resourceTypeColumn, "resources"),
+						anyInExpression(database, fmt.Sprintf("%s.%s", auditLogsTableName, resourceTypeColumn), "resources"),
 					),
 					buildTotalCountSelect(
 						auditLogsTableName,
 						false,
 						nil,
 						fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToAccountColumn, belongsToAccountColumn),
-						fmt.Sprintf("%s.%s = ANY(sqlc.arg(%s)::text[])", auditLogsTableName, resourceTypeColumn, "resources"),
+						anyInExpression(database, fmt.Sprintf("%s.%s", auditLogsTableName, resourceTypeColumn), "resources"),
 					),
 					auditLogsTableName,
-					strings.TrimPrefix(buildFilterConditions(auditLogsTableName, false, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToAccountColumn, belongsToAccountColumn), fmt.Sprintf("%s.%s = ANY(sqlc.arg(%s)::text[])", auditLogsTableName, resourceTypeColumn, "resources")), "AND "),
+					strings.TrimPrefix(buildFilterConditions(auditLogsTableName, database, false, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", auditLogsTableName, belongsToAccountColumn, belongsToAccountColumn), anyInExpression(database, fmt.Sprintf("%s.%s", auditLogsTableName, resourceTypeColumn), "resources")), "AND "),
 					buildCursorLimitClause(auditLogsTableName),
 				)),
 			},

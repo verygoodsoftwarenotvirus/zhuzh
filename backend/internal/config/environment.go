@@ -8,6 +8,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/branding"
+
 	databasecfg "github.com/verygoodsoftwarenotvirus/platform/v4/database/config"
 	"github.com/verygoodsoftwarenotvirus/platform/v4/observability"
 
@@ -17,18 +19,18 @@ import (
 
 // EnvironmentConfigSet contains a way of rendering a set of every config for a given environment to a given folder.
 type EnvironmentConfigSet struct {
-	RootConfig                               *APIServiceConfig
-	ServiceDatabaseUsers                     map[string]string
-	SearchDataIndexSchedulerConfigPath       string
-	DBCleanerConfigPath                      string
-	MobileNotificationSchedulerConfigPath    string
-	AsyncMessageHandlerConfigPath            string
-	EmailDeliverabilityTestConfigPath        string
-	QueueTestJobConfigPath                   string
-	APIServiceConfigPath                     string
-	MCPServiceConfigPath                     string
-	MCPServiceHTTPAPIServerURL               string
-	MCPServiceGRPCAPIServerURL               string
+	RootConfig                            *APIServiceConfig
+	ServiceDatabaseUsers                  map[string]string
+	SearchDataIndexSchedulerConfigPath    string
+	DBCleanerConfigPath                   string
+	MobileNotificationSchedulerConfigPath string
+	AsyncMessageHandlerConfigPath         string
+	EmailDeliverabilityTestConfigPath     string
+	QueueTestJobConfigPath                string
+	APIServiceConfigPath                  string
+	MCPServiceConfigPath                  string
+	MCPServiceHTTPAPIServerURL            string
+	MCPServiceGRPCAPIServerURL            string
 }
 
 func stringOrDefault(s, defaultStr string) string {
@@ -92,7 +94,7 @@ const (
 	amhConfigObservabilityServiceName  = "async_message_handler"
 	edtConfigObservabilityServiceName  = "email_deliverability_test"
 	qtConfigObservabilityServiceName   = "queue_test"
-	mcpConfigObservabilityServiceName  = "dinner_done_better_mcp_server"
+	mcpConfigObservabilityServiceName  = branding.CompanyNameSlug + "_mcp_server"
 )
 
 func (s *EnvironmentConfigSet) Render(outputDir string, pretty, validate bool) error {

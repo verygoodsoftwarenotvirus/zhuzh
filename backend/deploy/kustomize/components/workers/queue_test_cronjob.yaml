@@ -21,9 +21,9 @@ spec:
                 - name: "RUNNING_IN_KUBERNETES"
                   value: "true"
                 - name: "ZHUZH_OBSERVABILITY_METRICS_OTEL_SERVICE_NAME"
-                  value: "dinner_done_better_job_queue_test"
+                  value: "zhuzh_job_queue_test"
                 - name: "ZHUZH_OBSERVABILITY_TRACING_TRACING_SERVICE_NAME"
-                  value: "dinner_done_better_job_queue_test"
+                  value: "zhuzh_job_queue_test"
               volumeMounts:
                 - name: "config"
                   mountPath: "/etc/service-config.json"

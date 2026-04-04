@@ -21,17 +21,6 @@ import (
 	waitlistsmanager "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/waitlists/manager"
 	webhooksmanager "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/webhooks/manager"
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories"
-	auditrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/auditlogentries"
-	authrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/auth"
-	commentsrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/comments"
-	dataprivacyrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/dataprivacy"
-	identityrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/identity"
-	internalopsrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/internalops"
-	issuereportsrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/issuereports"
-	oauthrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/oauth"
-	paymentsrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/payments"
-	uploadedmediarepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/uploadedmedia"
-	webhooksrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/webhooks"
 	analyticssvc "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/services/analytics/grpc"
 	auditsvc "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/services/audit/grpc"
 	authsvc "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/services/auth/grpc"
@@ -106,18 +95,8 @@ func BuildInjector(
 	tokenscfg.RegisterTokenIssuer(i)
 	interceptors.RegisterAuthInterceptor(i)
 
-	// repositories (core)
-	auditrepo.RegisterAuditLogRepository(i)
-	authrepo.RegisterAuthRepository(i)
-	commentsrepo.RegisterCommentsRepository(i)
-	identityrepo.RegisterIdentityRepository(i)
-	issuereportsrepo.RegisterIssueReportsRepository(i)
-	uploadedmediarepo.RegisterUploadedMediaRepository(i)
-	webhooksrepo.RegisterWebhooksRepository(i)
-	oauthrepo.RegisterOAuthRepository(i)
-	paymentsrepo.RegisterPaymentsRepository(i)
-	dataprivacyrepo.RegisterDataPrivacyRepository(i)
-	internalopsrepo.RegisterInternalOpsRepository(i)
+	// repositories (core) — provider-conditional
+	repositories.RegisterRepositories(i, cfg.Database.Provider)
 
 	// managers
 	auditmanager.RegisterAuditDataManager(i)

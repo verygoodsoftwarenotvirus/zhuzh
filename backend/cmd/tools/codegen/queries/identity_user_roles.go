@@ -29,7 +29,7 @@ var userRolesColumns = []string{
 
 func buildUserRolesQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		return []*Query{
 			{
@@ -101,11 +101,11 @@ WHERE %s.%s IS NULL
 					strings.Join(applyToEach(userRolesColumns, func(i int, s string) string {
 						return fmt.Sprintf("%s.%s", userRolesTableName, s)
 					}), ",\n\t"),
-					buildFilterCountSelect(userRolesTableName, true, true, []string{}),
+					buildFilterCountSelect(userRolesTableName, database, true, true, []string{}),
 					buildTotalCountSelect(userRolesTableName, true, []string{}),
 					userRolesTableName,
 					userRolesTableName, archivedAtColumn,
-					buildFilterConditions(userRolesTableName, true, true),
+					buildFilterConditions(userRolesTableName, database, true, true),
 					buildCursorLimitClause(userRolesTableName),
 				)),
 			},
@@ -116,7 +116,7 @@ WHERE %s.%s IS NULL
 				},
 				Content: buildRawQuery((&builq.Builder{}).Addf(`UPDATE %s SET %s = %s WHERE %s IS NULL AND %s = sqlc.arg(%s);`,
 					userRolesTableName,
-					archivedAtColumn, currentTimeExpression,
+					archivedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),

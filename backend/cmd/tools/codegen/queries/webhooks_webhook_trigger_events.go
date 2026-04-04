@@ -28,7 +28,7 @@ var (
 
 func buildWebhookTriggerEventsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 		insertColumns := filterForInsert(webhookTriggerEventsColumns)
 		fullSelectColumns := applyToEach(webhookTriggerEventsColumns, func(_ int, s string) string {
 			return fullColumnName(webhookTriggerEventsTableName, s)
@@ -99,11 +99,11 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(webhookTriggerEventsTableName, true, true, nil),
+					buildFilterCountSelect(webhookTriggerEventsTableName, database, true, true, nil),
 					buildTotalCountSelect(webhookTriggerEventsTableName, true, nil),
 					webhookTriggerEventsTableName,
 					webhookTriggerEventsTableName, archivedAtColumn,
-					buildFilterConditions(webhookTriggerEventsTableName, true, true),
+					buildFilterConditions(webhookTriggerEventsTableName, database, true, true),
 					buildCursorLimitClause(webhookTriggerEventsTableName),
 				)),
 			},
@@ -121,7 +121,7 @@ WHERE %s IS NULL
 					strings.Join(applyToEach(filterForUpdate(webhookTriggerEventsColumns), func(_ int, s string) string {
 						return fmt.Sprintf("%s = sqlc.arg(%s)", s, s)
 					}), ",\n\t"),
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),
@@ -137,8 +137,8 @@ WHERE %s IS NULL
 WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					webhookTriggerEventsTableName,
-					lastUpdatedAtColumn, currentTimeExpression,
-					archivedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
+					archivedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),

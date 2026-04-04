@@ -58,10 +58,18 @@ format_imports:
 
 .PHONY: format_go_fieldalignment
 format_go_fieldalignment:
+	-go tool fieldalignment -fix ./... > /dev/null
+
+.PHONY: format_go_fieldalignment_until
+format_go_fieldalignment_until:
 	@$(SCRIPTS_DIR)/format_go_fieldalignment.sh
 
 .PHONY: format_go_tag_alignment
 format_go_tag_alignment:
+	-go tool tagalign -fix -sort -order "env,envDefault,envPrefix,json,mapstructure,toml,yaml" ./... > /dev/null
+
+.PHONY: format_go_tag_alignment_until
+format_go_tag_alignment_until:
 	@$(SCRIPTS_DIR)/format_go_tag_alignment.sh
 
 .PHONY: go_fix
@@ -72,12 +80,19 @@ go_fix:
 format_golang: go_fix goimports format_imports format_go_fieldalignment format_go_tag_alignment
 	@$(SCRIPTS_DIR)/format_golang.sh $(PWD)
 
+.PHONY: format_golang_until
+format_golang_until: go_fix goimports format_imports format_go_fieldalignment_until format_go_tag_alignment_until
+	@$(SCRIPTS_DIR)/format_golang.sh $(PWD)
+
 .PHONY: terraformat
 terraformat:
 	@$(SCRIPTS_DIR)/terraformat.sh
 
 .PHONY: format
-format: format_golang terraformat
+format: format_golang
+
+.PHONY: format_until
+format_until: format_golang_until
 
 .PHONY: fmt
 fmt: format
@@ -154,6 +169,10 @@ integration_tests: integration_tests_postgres
 .PHONY: integration_tests_postgres
 integration_tests_postgres:
 	$(SCRIPTS_DIR)/integration_tests_postgres.sh $(THIS)
+
+.PHONY: integration_tests_sqlite
+integration_tests_sqlite:
+	$(SCRIPTS_DIR)/integration_tests_sqlite.sh $(THIS)
 
 ## EXECUTION
 

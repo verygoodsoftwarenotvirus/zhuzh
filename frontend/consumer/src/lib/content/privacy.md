@@ -5,7 +5,7 @@ Last updated: March 2025
 ## 1. Introduction
 
 Zhuzh ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we
-collect, use, disclose, and safeguard your information when you use our meal planning and grocery list application.
+collect, use, disclose, and safeguard your information when you use our platform.
 
 ## 2. Information We Collect
 
@@ -17,13 +17,10 @@ We collect the following categories of information:
 - Password (stored in encrypted form)
 - Account creation and verification data
 
-### Meal Planning Data
+### Content Data
 
-- Recipes you create, save, or use
-- Meal plans and meals
-- Grocery lists and grocery list items
-- Ingredient preferences and ratings
-- Kitchen instruments and equipment you own
+- Comments you create on issue reports
+- Issue reports and feedback you submit
 
 ### Account and Billing Information
 
@@ -39,8 +36,7 @@ We collect the following categories of information:
 
 ### Other Data
 
-- Uploaded media (e.g., recipe photos)
-- Issue reports and feedback you submit
+- Uploaded media (e.g., profile photos, attachments)
 - Waitlist signups (if applicable)
 - Webhook configurations (for integrations)
 - Notification preferences

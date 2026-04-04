@@ -130,12 +130,12 @@ resource "kubernetes_secret_v1" "api_service_config" {
     RESEND_API_KEY                     = var.RESEND_API_KEY
 
     # Per-service database passwords
-    DATABASE_API_PASSWORD                                = random_password.api_user_database_password.result
-    DATABASE_ASYNC_MESSAGE_HANDLER_PASSWORD              = random_password.async_message_handler_database_user_database_password.result
-    DATABASE_DB_CLEANER_PASSWORD                         = random_password.db_cleaner_user_database_password.result
-    DATABASE_SEARCH_DATA_INDEX_SCHEDULER_PASSWORD        = random_password.search_data_index_scheduler_user_database_password.result
-    DATABASE_MOBILE_NOTIFICATION_SCHEDULER_PASSWORD      = random_password.mobile_notification_scheduler_user_database_password.result
-    DATABASE_QUEUE_TEST_PASSWORD                         = random_password.queue_test_user_database_password.result
+    DATABASE_API_PASSWORD                           = random_password.api_user_database_password.result
+    DATABASE_ASYNC_MESSAGE_HANDLER_PASSWORD         = random_password.async_message_handler_database_user_database_password.result
+    DATABASE_DB_CLEANER_PASSWORD                    = random_password.db_cleaner_user_database_password.result
+    DATABASE_SEARCH_DATA_INDEX_SCHEDULER_PASSWORD   = random_password.search_data_index_scheduler_user_database_password.result
+    DATABASE_MOBILE_NOTIFICATION_SCHEDULER_PASSWORD = random_password.mobile_notification_scheduler_user_database_password.result
+    DATABASE_QUEUE_TEST_PASSWORD                    = random_password.queue_test_user_database_password.result
   }
 }
 

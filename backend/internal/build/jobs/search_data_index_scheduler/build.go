@@ -5,8 +5,7 @@ import (
 
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/config"
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/identity"
-	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/auditlogentries"
-	identityrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/identity"
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories"
 
 	databasecfg "github.com/verygoodsoftwarenotvirus/platform/v4/database/config"
 	"github.com/verygoodsoftwarenotvirus/platform/v4/database/postgres"
@@ -39,8 +38,7 @@ func BuildInjector(
 	msgconfig.RegisterMessageQueue(i)
 	databasecfg.RegisterClientConfig(i)
 	postgres.RegisterDatabaseClient(i)
-	auditlogentries.RegisterAuditLogRepository(i)
-	identityrepo.RegisterIdentityRepository(i)
+	repositories.RegisterRepositories(i, cfg.Database.Provider)
 
 	do.Provide[map[string]indexing.Function](i, func(i do.Injector) (map[string]indexing.Function, error) {
 		identityRepo := do.MustInvoke[identity.Repository](i)

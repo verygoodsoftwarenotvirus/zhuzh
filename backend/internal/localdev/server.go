@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/authentication"
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/authorization"
 	apiserver "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/build/services/api"
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/config"
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/audit"
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/auth"
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/identity"
 	identityconverters "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/identity/converters"
@@ -20,14 +23,21 @@ import (
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/webhooks"
 	authsvc "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/grpc/generated/services/auth"
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories"
-	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/auditlogentries"
-	authrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/auth"
-	identityrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/identity"
-	notificationsrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/notifications"
-	oauthrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/oauth"
-	settingsrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/settings"
+	pgauditlogentries "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/auditlogentries"
+	pgauth "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/auth"
+	pgidentity "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/identity"
+	pgnotifications "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/notifications"
+	pgoauth "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/oauth"
+	pgsettings "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/settings"
 	pgtesting "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/testing"
-	webhooksrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/webhooks"
+	pgwebhooks "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/webhooks"
+	sqliteauditlogentries "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/sqlite/auditlogentries"
+	sqliteauth "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/sqlite/auth"
+	sqliteidentity "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/sqlite/identity"
+	sqlitenotifications "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/sqlite/notifications"
+	sqliteoauth "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/sqlite/oauth"
+	sqlitesettings "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/sqlite/settings"
+	sqlitewebhooks "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/sqlite/webhooks"
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/pkg/client"
 
 	"github.com/verygoodsoftwarenotvirus/platform/v4/database"
@@ -45,6 +55,46 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// ProvideAuditLogRepository returns the audit log repository for the given provider.
+func ProvideAuditLogRepository(provider string, logger logging.Logger, tracerProvider tracing.TracerProvider, dbClient database.Client) audit.Repository {
+	switch provider {
+	case databasecfg.ProviderSQLite:
+		return sqliteauditlogentries.ProvideAuditLogRepository(logger, tracerProvider, dbClient)
+	default:
+		return pgauditlogentries.ProvideAuditLogRepository(logger, tracerProvider, dbClient)
+	}
+}
+
+// ProvideIdentityRepository returns the identity repository for the given provider.
+func ProvideIdentityRepository(provider string, logger logging.Logger, tracerProvider tracing.TracerProvider, auditRepo audit.Repository, dbClient database.Client) identity.Repository {
+	switch provider {
+	case databasecfg.ProviderSQLite:
+		return sqliteidentity.ProvideIdentityRepository(logger, tracerProvider, auditRepo, dbClient)
+	default:
+		return pgidentity.ProvideIdentityRepository(logger, tracerProvider, auditRepo, dbClient)
+	}
+}
+
+// ProvideAuthRepository returns the auth repository for the given provider.
+func ProvideAuthRepository(provider string, logger logging.Logger, tracerProvider tracing.TracerProvider, auditRepo audit.Repository, dbClient database.Client) auth.Repository {
+	switch provider {
+	case databasecfg.ProviderSQLite:
+		return sqliteauth.ProvideAuthRepository(logger, tracerProvider, auditRepo, dbClient)
+	default:
+		return pgauth.ProvideAuthRepository(logger, tracerProvider, auditRepo, dbClient)
+	}
+}
+
+// ProvideOAuthRepository returns the OAuth repository for the given provider.
+func ProvideOAuthRepository(provider string, logger logging.Logger, tracerProvider tracing.TracerProvider, auditRepo audit.Repository, dbCfg *databasecfg.Config, dbClient database.Client) oauth.Repository {
+	switch provider {
+	case databasecfg.ProviderSQLite:
+		return sqliteoauth.ProvideOAuthRepository(logger, tracerProvider, auditRepo, dbCfg, dbClient)
+	default:
+		return pgoauth.ProvideOAuthRepository(logger, tracerProvider, auditRepo, dbCfg, dbClient)
+	}
+}
+
 func CreatePremadeAdminUser(
 	ctx context.Context,
 	logger logging.Logger,
@@ -52,6 +102,7 @@ func CreatePremadeAdminUser(
 	identityRepo identity.Repository,
 	dbClient database.Client,
 	premadeAdminUser *identity.User,
+	provider string,
 ) (*identity.User, error) {
 	hasher := authentication.ProvideArgon2Authenticator(logger, tracerProvider)
 
@@ -72,10 +123,20 @@ func CreatePremadeAdminUser(
 	}
 
 	// Promote user to service_admin by archiving old service role and assigning new one.
-	if _, err = dbClient.WriteDB().Exec("UPDATE user_role_assignments SET archived_at = NOW() WHERE user_id = $1 AND account_id IS NULL AND archived_at IS NULL", user.ID); err != nil {
+	var archiveSQL, insertSQL string
+	switch provider {
+	case databasecfg.ProviderSQLite:
+		archiveSQL = "UPDATE user_role_assignments SET archived_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE user_id = ? AND account_id IS NULL AND archived_at IS NULL"
+		insertSQL = "INSERT INTO user_role_assignments (id, user_id, role_id) VALUES (?, ?, ?)"
+	default:
+		archiveSQL = "UPDATE user_role_assignments SET archived_at = NOW() WHERE user_id = $1 AND account_id IS NULL AND archived_at IS NULL"
+		insertSQL = "INSERT INTO user_role_assignments (id, user_id, role_id) VALUES ($1, $2, $3)"
+	}
+
+	if _, err = dbClient.WriteDB().ExecContext(ctx, archiveSQL, user.ID); err != nil {
 		return nil, fmt.Errorf("failed to archive old service role: %w", err)
 	}
-	if _, err = dbClient.WriteDB().Exec("INSERT INTO user_role_assignments (id, user_id, role_id) VALUES ($1, $2, $3)", identifiers.New(), user.ID, authorization.ServiceAdminRoleID); err != nil {
+	if _, err = dbClient.WriteDB().ExecContext(ctx, insertSQL, identifiers.New(), user.ID, authorization.ServiceAdminRoleID); err != nil {
 		return nil, fmt.Errorf("failed to assign service_admin role: %w", err)
 	}
 
@@ -91,9 +152,9 @@ func CreatePremadeAdminUser(
 	return adminUser, nil
 }
 
-func CreateOAuth2ClientForService(ctx context.Context, pgc database.Client, dbCfg *databasecfg.Config, oauth2Input *oauth.OAuth2ClientDatabaseCreationInput) (*oauth.OAuth2Client, error) {
-	auditRepo := auditlogentries.ProvideAuditLogRepository(nil, nil, pgc)
-	oauth2ClientManager := oauthrepo.ProvideOAuthRepository(nil, nil, auditRepo, dbCfg, pgc)
+func CreateOAuth2ClientForService(ctx context.Context, pgc database.Client, dbCfg *databasecfg.Config, oauth2Input *oauth.OAuth2ClientDatabaseCreationInput, provider string) (*oauth.OAuth2Client, error) {
+	auditRepo := ProvideAuditLogRepository(provider, nil, nil, pgc)
+	oauth2ClientManager := ProvideOAuthRepository(provider, nil, nil, auditRepo, dbCfg, pgc)
 
 	createdClient, err := oauth2ClientManager.CreateOAuth2Client(ctx, oauth2Input)
 	if err != nil {
@@ -110,21 +171,50 @@ func BuildInProcessServer(ctx context.Context, cfg *config.APIServiceConfig) (se
 	}
 	logger := pillars.Logger
 
-	redisConfig, _, err := redis.BuildContainerBackedRedisConfig(ctx)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("connecting to redis: %w", err)
-	}
-	cfg.Events.Publisher.Provider = msgconfig.ProviderRedis
-	cfg.Events.Publisher.Redis = *redisConfig
-	cfg.Events.Consumer.Redis = *redisConfig
+	switch cfg.Database.Provider {
+	case databasecfg.ProviderSQLite:
+		// Create a temp directory for the SQLite database file.
+		tmpDir, mkdirErr := os.MkdirTemp("", "zhuzh-sqlite-integration-*")
+		if mkdirErr != nil {
+			return nil, nil, nil, fmt.Errorf("creating temp dir for sqlite: %w", mkdirErr)
+		}
 
-	// set up a database container, migrate it, and build a connection client
-	_, _, dbCfg, err = pgtesting.BuildDatabaseContainer(ctx, "integration_testing")
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("connecting to postgres: %w", err)
+		// busy_timeout pragma waits up to 5 s before returning SQLITE_BUSY.
+		// modernc.org/sqlite uses _pragma=<pragma> DSN params, not _busy_timeout.
+		// foreign_keys pragma enforces referential integrity (off by default in SQLite).
+		dbDSN := filepath.Join(tmpDir, "integration_test.db") + "?_pragma=busy_timeout(5000)&_pragma=foreign_keys(on)"
+		cfg.Database.Provider = databasecfg.ProviderSQLite
+		cfg.Database.ReadConnection = databasecfg.ConnectionDetails{Database: dbDSN}
+		cfg.Database.WriteConnection = databasecfg.ConnectionDetails{Database: dbDSN}
+		cfg.Database.OAuth2TokenEncryptionKey = "blahblahblahblahblahblahblahblah"
+		cfg.Database.UserDeviceTokenEncryptionKey = "blahblahblahblahblahblahblahblah"
+
+		// Use noop message queue (the platform library falls through to noop for unrecognized providers).
+		cfg.Events.Publisher.Provider = "noop"
+		cfg.Events.Consumer.Provider = "noop"
+
+		dbCfg = &cfg.Database
+	default:
+		// PostgreSQL path: spin up a container via testcontainers.
+		redisConfig, _, redisErr := redis.BuildContainerBackedRedisConfig(ctx)
+		if redisErr != nil {
+			return nil, nil, nil, fmt.Errorf("connecting to redis: %w", redisErr)
+		}
+		cfg.Events.Publisher.Provider = msgconfig.ProviderRedis
+		cfg.Events.Publisher.Redis = *redisConfig
+		cfg.Events.Consumer.Redis = *redisConfig
+
+		_, _, pgDBCfg, pgErr := pgtesting.BuildDatabaseContainer(ctx, "integration_testing")
+		if pgErr != nil {
+			return nil, nil, nil, fmt.Errorf("connecting to postgres: %w", pgErr)
+		}
+		cfg.Database.WriteConnection = pgDBCfg.WriteConnection
+		cfg.Database.ReadConnection = pgDBCfg.ReadConnection
+		cfg.Database.OAuth2TokenEncryptionKey = pgDBCfg.OAuth2TokenEncryptionKey
+		cfg.Database.UserDeviceTokenEncryptionKey = pgDBCfg.UserDeviceTokenEncryptionKey
+
+		dbCfg = &cfg.Database
 	}
-	cfg.Database.WriteConnection = dbCfg.WriteConnection
-	cfg.Database.ReadConnection = dbCfg.ReadConnection
 
 	tracerProvider := tracing.NewNoopTracerProvider()
 	migrator := repositories.ProvideMigrator(&cfg.Database, logger)
@@ -133,13 +223,12 @@ func BuildInProcessServer(ctx context.Context, cfg *config.APIServiceConfig) (se
 		return nil, nil, nil, fmt.Errorf("initializing database client: %w", err)
 	}
 
-	// create premade admin user
 	server, err = apiserver.NewServer(ctx, pillars, cfg)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("building API server: %w", err)
 	}
 
-	return server, databaseClient, &cfg.Database, nil
+	return server, databaseClient, dbCfg, nil
 }
 
 // DatabaseInitFunc is a function that performs database initialization operations.
@@ -147,62 +236,80 @@ func BuildInProcessServer(ctx context.Context, cfg *config.APIServiceConfig) (se
 type DatabaseInitFunc func(ctx context.Context, dbClient database.Client, dbCfg *databasecfg.Config, logger logging.Logger, tracerProvider tracing.TracerProvider) error
 
 // WithIdentityRepository provides an identity repository for custom operations.
-// The provided function receives a fully configured identity.Repository along with logger, tracer, and database client.
-func WithIdentityRepository(fn func(ctx context.Context, repo identity.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider, dbClient database.Client) error) DatabaseInitFunc {
+func WithIdentityRepository(provider string, fn func(ctx context.Context, repo identity.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider, dbClient database.Client) error) DatabaseInitFunc {
 	return func(ctx context.Context, dbClient database.Client, dbCfg *databasecfg.Config, logger logging.Logger, tracerProvider tracing.TracerProvider) error {
-		auditLogRepo := auditlogentries.ProvideAuditLogRepository(logger, tracerProvider, dbClient)
-		identityRepo := identityrepo.ProvideIdentityRepository(logger, tracerProvider, auditLogRepo, dbClient)
+		auditLogRepo := ProvideAuditLogRepository(provider, logger, tracerProvider, dbClient)
+		identityRepo := ProvideIdentityRepository(provider, logger, tracerProvider, auditLogRepo, dbClient)
 		return fn(ctx, identityRepo, logger, tracerProvider, dbClient)
 	}
 }
 
 // WithOAuth2Repository provides an OAuth2 repository for custom operations.
-// The provided function receives a fully configured oauth.Repository along with logger and tracer.
-func WithOAuth2Repository(fn func(ctx context.Context, repo oauth.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider) error) DatabaseInitFunc {
+func WithOAuth2Repository(provider string, fn func(ctx context.Context, repo oauth.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider) error) DatabaseInitFunc {
 	return func(ctx context.Context, dbClient database.Client, dbCfg *databasecfg.Config, logger logging.Logger, tracerProvider tracing.TracerProvider) error {
-		auditLogRepo := auditlogentries.ProvideAuditLogRepository(logger, tracerProvider, dbClient)
-		oauthRepo := oauthrepo.ProvideOAuthRepository(logger, tracerProvider, auditLogRepo, dbCfg, dbClient)
+		auditLogRepo := ProvideAuditLogRepository(provider, logger, tracerProvider, dbClient)
+		oauthRepo := ProvideOAuthRepository(provider, logger, tracerProvider, auditLogRepo, dbCfg, dbClient)
 		return fn(ctx, oauthRepo, logger, tracerProvider)
 	}
 }
 
 // WithAuthRepository provides an auth repository for custom operations.
-// The provided function receives a fully configured auth.Repository along with logger and tracer.
-func WithAuthRepository(fn func(ctx context.Context, repo auth.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider) error) DatabaseInitFunc {
+func WithAuthRepository(provider string, fn func(ctx context.Context, repo auth.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider) error) DatabaseInitFunc {
 	return func(ctx context.Context, dbClient database.Client, dbCfg *databasecfg.Config, logger logging.Logger, tracerProvider tracing.TracerProvider) error {
-		auditLogRepo := auditlogentries.ProvideAuditLogRepository(logger, tracerProvider, dbClient)
-		authRepo := authrepo.ProvideAuthRepository(logger, tracerProvider, auditLogRepo, dbClient)
+		auditLogRepo := ProvideAuditLogRepository(provider, logger, tracerProvider, dbClient)
+		var authRepo auth.Repository
+		switch provider {
+		case databasecfg.ProviderSQLite:
+			authRepo = sqliteauth.ProvideAuthRepository(logger, tracerProvider, auditLogRepo, dbClient)
+		default:
+			authRepo = pgauth.ProvideAuthRepository(logger, tracerProvider, auditLogRepo, dbClient)
+		}
 		return fn(ctx, authRepo, logger, tracerProvider)
 	}
 }
 
 // WithSettingsRepository provides a settings repository for custom operations.
-// The provided function receives a fully configured settings.Repository along with logger and tracer.
-func WithSettingsRepository(fn func(ctx context.Context, repo settings.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider) error) DatabaseInitFunc {
+func WithSettingsRepository(provider string, fn func(ctx context.Context, repo settings.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider) error) DatabaseInitFunc {
 	return func(ctx context.Context, dbClient database.Client, dbCfg *databasecfg.Config, logger logging.Logger, tracerProvider tracing.TracerProvider) error {
-		auditLogRepo := auditlogentries.ProvideAuditLogRepository(logger, tracerProvider, dbClient)
-		settingsRepo := settingsrepo.ProvideSettingsRepository(logger, tracerProvider, auditLogRepo, dbClient)
+		auditLogRepo := ProvideAuditLogRepository(provider, logger, tracerProvider, dbClient)
+		var settingsRepo settings.Repository
+		switch provider {
+		case databasecfg.ProviderSQLite:
+			settingsRepo = sqlitesettings.ProvideSettingsRepository(logger, tracerProvider, auditLogRepo, dbClient)
+		default:
+			settingsRepo = pgsettings.ProvideSettingsRepository(logger, tracerProvider, auditLogRepo, dbClient)
+		}
 		return fn(ctx, settingsRepo, logger, tracerProvider)
 	}
 }
 
 // WithWebhooksRepository provides a webhooks repository for custom operations.
-// The provided function receives a fully configured webhooks.Repository along with logger and tracer.
-func WithWebhooksRepository(fn func(ctx context.Context, repo webhooks.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider) error) DatabaseInitFunc {
+func WithWebhooksRepository(provider string, fn func(ctx context.Context, repo webhooks.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider) error) DatabaseInitFunc {
 	return func(ctx context.Context, dbClient database.Client, dbCfg *databasecfg.Config, logger logging.Logger, tracerProvider tracing.TracerProvider) error {
-		auditLogRepo := auditlogentries.ProvideAuditLogRepository(logger, tracerProvider, dbClient)
-		webhooksRepo := webhooksrepo.ProvideWebhooksRepository(logger, tracerProvider, auditLogRepo, dbClient)
+		auditLogRepo := ProvideAuditLogRepository(provider, logger, tracerProvider, dbClient)
+		var webhooksRepo webhooks.Repository
+		switch provider {
+		case databasecfg.ProviderSQLite:
+			webhooksRepo = sqlitewebhooks.ProvideWebhooksRepository(logger, tracerProvider, auditLogRepo, dbClient)
+		default:
+			webhooksRepo = pgwebhooks.ProvideWebhooksRepository(logger, tracerProvider, auditLogRepo, dbClient)
+		}
 		return fn(ctx, webhooksRepo, logger, tracerProvider)
 	}
 }
 
 // WithNotificationsRepository provides a notifications repository for custom operations.
-// The provided function receives a fully configured notifications.Repository along with logger and tracer.
-func WithNotificationsRepository(fn func(ctx context.Context, repo notifications.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider) error) DatabaseInitFunc {
+func WithNotificationsRepository(provider string, fn func(ctx context.Context, repo notifications.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider) error) DatabaseInitFunc {
 	return func(ctx context.Context, dbClient database.Client, dbCfg *databasecfg.Config, logger logging.Logger, tracerProvider tracing.TracerProvider) error {
-		auditLogRepo := auditlogentries.ProvideAuditLogRepository(logger, tracerProvider, dbClient)
-		notificationsRepo := notificationsrepo.ProvideNotificationsRepository(logger, tracerProvider, auditLogRepo, dbCfg, dbClient)
-		return fn(ctx, notificationsRepo, logger, tracerProvider)
+		auditLogRepo := ProvideAuditLogRepository(provider, logger, tracerProvider, dbClient)
+		var notifsRepo notifications.Repository
+		switch provider {
+		case databasecfg.ProviderSQLite:
+			notifsRepo = sqlitenotifications.ProvideNotificationsRepository(logger, tracerProvider, auditLogRepo, dbCfg, dbClient)
+		default:
+			notifsRepo = pgnotifications.ProvideNotificationsRepository(logger, tracerProvider, auditLogRepo, dbCfg, dbClient)
+		}
+		return fn(ctx, notifsRepo, logger, tracerProvider)
 	}
 }
 

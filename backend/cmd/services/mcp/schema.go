@@ -69,6 +69,21 @@ func optionalFloat32RangeSchema() map[string]any {
 	})
 }
 
+func floatField(description string) map[string]any {
+	return map[string]any{
+		"type":        numberType,
+		"description": description,
+	}
+}
+
+func uintField(description string) map[string]any {
+	return map[string]any{
+		"type":        intType,
+		"description": description,
+		"minimum":     0,
+	}
+}
+
 func schemaObject(properties map[string]any) map[string]any {
 	return map[string]any{
 		"$schema":    jsonSchemaVersion,
@@ -94,21 +109,6 @@ func arrayType(fieldSchema map[string]any) map[string]any {
 	return map[string]any{
 		"type":  arrType,
 		"items": fieldSchema,
-	}
-}
-
-func floatField(description string) map[string]any {
-	return map[string]any{
-		"type":        numberType,
-		"description": description,
-	}
-}
-
-func uintField(description string) map[string]any {
-	return map[string]any{
-		"type":        intType,
-		"description": description,
-		"minimum":     0,
 	}
 }
 

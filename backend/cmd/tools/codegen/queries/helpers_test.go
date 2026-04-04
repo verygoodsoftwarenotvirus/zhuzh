@@ -144,7 +144,7 @@ func Test_buildFilterConditions(T *testing.T) {
 	AND things.created_at < COALESCE(sqlc.narg(created_before), (SELECT NOW() + '999 years'::INTERVAL))
 	AND things.id > COALESCE(sqlc.narg(cursor), '')`
 
-		actual := buildFilterConditions("things", false, false)
+		actual := buildFilterConditions("things", "postgres", false, false)
 
 		assert.Equal(t, expected, actual)
 	})
@@ -160,12 +160,12 @@ func Test_buildFilterCountSelect(T *testing.T) {
 		SELECT COUNT(things.id)
 		FROM things
 		WHERE things.archived_at IS NULL
-			AND 
+			AND
 			things.created_at > COALESCE(sqlc.narg(created_after), (SELECT NOW() - '999 years'::INTERVAL))
 			AND things.created_at < COALESCE(sqlc.narg(created_before), (SELECT NOW() + '999 years'::INTERVAL))
 			AND (NOT COALESCE(sqlc.narg(include_archived), false)::boolean OR things.archived_at = NULL)
 	) AS filtered_count`
-		actual := buildFilterCountSelect("things", false, true, []string{})
+		actual := buildFilterCountSelect("things", "postgres", false, true, []string{})
 
 		assert.Equal(t, expected, actual)
 	})

@@ -4,8 +4,10 @@ import (
 	"context"
 
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/waitlists"
-	waitlistsrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/waitlists"
+	pgwaitlistsrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/waitlists"
+	sqlitewaitlistsrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/sqlite/waitlists"
 
+	databasecfg "github.com/verygoodsoftwarenotvirus/platform/v4/database/config"
 	"github.com/verygoodsoftwarenotvirus/platform/v4/messagequeue"
 	msgconfig "github.com/verygoodsoftwarenotvirus/platform/v4/messagequeue/config"
 	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/logging"
@@ -16,12 +18,14 @@ import (
 
 // RegisterWaitlistDataManager registers the waitlist data manager with the injector.
 func RegisterWaitlistDataManager(i do.Injector) {
-	// Register the repo provider (was included in wire.NewSet)
-	waitlistsrepo.RegisterWaitlistsRepository(i)
-
-	// Bind *waitlistsrepo.Repository to the waitlistRepository interface
+	// Bind the concrete repo (already registered in registry.go) to the waitlistRepository interface.
+	// Pick the right concrete type based on the configured database provider.
 	do.Provide[waitlistRepository](i, func(i do.Injector) (waitlistRepository, error) {
-		return do.MustInvoke[*waitlistsrepo.Repository](i), nil
+		cfg := do.MustInvoke[*databasecfg.Config](i)
+		if cfg.Provider == databasecfg.ProviderSQLite {
+			return do.MustInvoke[*sqlitewaitlistsrepo.Repository](i), nil
+		}
+		return do.MustInvoke[*pgwaitlistsrepo.Repository](i), nil
 	})
 
 	do.Provide[WaitlistsDataManager](i, func(i do.Injector) (WaitlistsDataManager, error) {

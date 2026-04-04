@@ -211,7 +211,7 @@ func TestAuthManager_CheckUserPermissions(t *testing.T) {
 		}
 
 		input := &auth.UserPermissionsRequestInput{
-			Permissions: []string{"recipes:read"},
+			Permissions: []string{"comments:read"},
 		}
 
 		result, err := manager.CheckUserPermissions(ctx, input)

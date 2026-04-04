@@ -206,9 +206,3 @@ func stringFromEventContext(changeMessage *audit.DataChangeMessage, key string) 
 		return ""
 	}
 }
-
-// rowIDFromEventContext returns the row ID string from the data change message context.
-// Producers publish only the ID (e.g. the relevant key -> entity.ID), not the full entity.
-func rowIDFromEventContext(changeMessage *audit.DataChangeMessage, idKey string) string {
-	return stringFromEventContext(changeMessage, idKey)
-}

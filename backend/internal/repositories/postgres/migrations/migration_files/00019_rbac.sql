@@ -117,7 +117,7 @@ INSERT INTO user_role_hierarchy (id, parent_role_id, child_role_id) VALUES
     ('d74elbkn9qd4nv86eo2g', 'role_account_admin', 'role_service_admin');
 
 -- =============================================================================
--- SEED DATA: core permissions (non-mealplanning)
+-- SEED DATA: core permissions
 -- =============================================================================
 
 INSERT INTO permissions (id, name, description) VALUES

@@ -30,7 +30,7 @@ var waitlistSignupColumns = []string{
 
 func buildWaitlistSignupsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 		insertColumns := filterForInsert(waitlistSignupColumns)
 		fullSelectColumns := applyToEach(waitlistSignupColumns, func(_ int, s string) string {
 			return fullColumnName(waitlistSignupsTableName, s)
@@ -68,7 +68,7 @@ WHERE %s IS NULL
 					strings.Join(applyToEach(filterForUpdate(waitlistSignupColumns, belongsToWaitlistColumn, belongsToUserColumn, belongsToAccountColumn), func(_ int, s string) string {
 						return fmt.Sprintf("%s = sqlc.arg(%s)", s, s)
 					}), ",\n\t"),
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),
@@ -84,8 +84,8 @@ WHERE %s IS NULL
 WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					waitlistSignupsTableName,
-					lastUpdatedAtColumn, currentTimeExpression,
-					archivedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
+					archivedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),
@@ -142,12 +142,12 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(waitlistSignupsTableName, true, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", waitlistSignupsTableName, belongsToWaitlistColumn, belongsToWaitlistColumn)),
+					buildFilterCountSelect(waitlistSignupsTableName, database, true, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", waitlistSignupsTableName, belongsToWaitlistColumn, belongsToWaitlistColumn)),
 					buildTotalCountSelect(waitlistSignupsTableName, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", waitlistSignupsTableName, belongsToWaitlistColumn, belongsToWaitlistColumn)),
 					waitlistSignupsTableName,
 					waitlistSignupsTableName, archivedAtColumn,
 					waitlistSignupsTableName, belongsToWaitlistColumn, belongsToWaitlistColumn,
-					buildFilterConditions(waitlistSignupsTableName, true, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", waitlistSignupsTableName, belongsToWaitlistColumn, belongsToWaitlistColumn)),
+					buildFilterConditions(waitlistSignupsTableName, database, true, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", waitlistSignupsTableName, belongsToWaitlistColumn, belongsToWaitlistColumn)),
 					buildCursorLimitClause(waitlistSignupsTableName),
 				)),
 			},
@@ -166,12 +166,12 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(waitlistSignupsTableName, true, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", waitlistSignupsTableName, belongsToUserColumn, belongsToUserColumn)),
+					buildFilterCountSelect(waitlistSignupsTableName, database, true, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", waitlistSignupsTableName, belongsToUserColumn, belongsToUserColumn)),
 					buildTotalCountSelect(waitlistSignupsTableName, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", waitlistSignupsTableName, belongsToUserColumn, belongsToUserColumn)),
 					waitlistSignupsTableName,
 					waitlistSignupsTableName, archivedAtColumn,
 					waitlistSignupsTableName, belongsToUserColumn, belongsToUserColumn,
-					buildFilterConditions(waitlistSignupsTableName, true, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", waitlistSignupsTableName, belongsToUserColumn, belongsToUserColumn)),
+					buildFilterConditions(waitlistSignupsTableName, database, true, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", waitlistSignupsTableName, belongsToUserColumn, belongsToUserColumn)),
 					buildCursorLimitClause(waitlistSignupsTableName),
 				)),
 			},

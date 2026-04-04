@@ -11,7 +11,7 @@ import SwiftUI
 private let uploadChunkSize = 64 * 1024  // 64 KB
 
 /// Generic media upload view model. Use for uploading images to any bucket:
-/// avatars, recipes, meals, or custom buckets.
+/// avatars or custom buckets.
 @Observable
 @MainActor
 public class MediaUploadViewModel {

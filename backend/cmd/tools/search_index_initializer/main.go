@@ -69,7 +69,7 @@ func initCmd(databaseURL, searchProvider, algoliaAppID, algoliaAPIKey *string) *
 		},
 	}
 
-	cmd.Flags().StringVar(&indices, "indices", "", "Comma-separated indices to initialize (e.g. recipes,meals,users)")
+	cmd.Flags().StringVar(&indices, "indices", "", "Comma-separated indices to initialize (e.g. users)")
 	cmd.Flags().BoolVar(&wipe, "wipe", false, "Wipe index before reindexing")
 	cmd.Flags().IntVar(&batchSize, "batch-size", defaultBatchSize, "Page size for cursor pagination")
 

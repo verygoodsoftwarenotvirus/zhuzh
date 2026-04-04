@@ -22,9 +22,9 @@ spec:
                 - name: "SEARCH_INDEXING_TOPIC_NAME"
                   value: "search_index_requests"
                 - name: "ZHUZH_OBSERVABILITY_METRICS_OTEL_SERVICE_NAME"
-                  value: "dinner_done_better_job_search_data_index_scheduler"
+                  value: "zhuzh_job_search_data_index_scheduler"
                 - name: "ZHUZH_OBSERVABILITY_TRACING_TRACING_SERVICE_NAME"
-                  value: "dinner_done_better_job_search_data_index_scheduler"
+                  value: "zhuzh_job_search_data_index_scheduler"
               volumeMounts:
                 - name: "config"
                   mountPath: "/etc/service-config.json"

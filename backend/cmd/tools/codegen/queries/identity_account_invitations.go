@@ -42,7 +42,7 @@ var accountInvitationsColumns = []string{
 
 func buildAccountInvitationsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		insertColumns := filterForInsert(accountInvitationsColumns,
 			"status",
@@ -81,7 +81,7 @@ WHERE %s IS NULL
 	AND %s = LOWER(sqlc.arg(%s));`,
 					accountInvitationsTableName,
 					toUserColumn, toUserColumn,
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					toEmailColumn, toEmailColumn,
 				)),
@@ -110,11 +110,12 @@ WHERE %s IS NULL
 				},
 				Content: buildRawQuery((&builq.Builder{}).Addf(`UPDATE %s SET
 	%s = sqlc.arg(%s),
-	last_updated_at = NOW()
+	last_updated_at = %s
 WHERE archived_at IS NULL
 	AND %s = LOWER(sqlc.arg(%s))`,
 					accountInvitationsTableName,
 					toUserColumn, toUserColumn,
+					currentTimeExpression(database),
 					toEmailColumn, emailAddressColumn,
 				)),
 			},
@@ -156,7 +157,7 @@ WHERE %s.%s IS NULL
 					usersTableName, accountInvitationsTableName, fromUserColumn, usersTableName, idColumn,
 					avatarJoinClause,
 					accountInvitationsTableName, archivedAtColumn,
-					accountInvitationsTableName, accountInvitationsExpiresAtColumn, currentTimeExpression,
+					accountInvitationsTableName, accountInvitationsExpiresAtColumn, currentTimeExpression(database),
 					accountInvitationsTableName, toEmailColumn, toEmailColumn,
 					accountInvitationsTableName, accountInvitationsTokenColumn, accountInvitationsTokenColumn,
 				)),
@@ -182,7 +183,7 @@ WHERE %s.%s IS NULL
 					usersTableName, accountInvitationsTableName, fromUserColumn, usersTableName, idColumn,
 					avatarJoinClause,
 					accountInvitationsTableName, archivedAtColumn,
-					accountInvitationsTableName, accountInvitationsExpiresAtColumn, currentTimeExpression,
+					accountInvitationsTableName, accountInvitationsExpiresAtColumn, currentTimeExpression(database),
 					accountInvitationsTableName, destinationAccountColumn, destinationAccountColumn,
 					accountInvitationsTableName, idColumn, idColumn,
 				)),
@@ -208,7 +209,7 @@ WHERE %s.%s IS NULL
 					usersTableName, accountInvitationsTableName, fromUserColumn, usersTableName, idColumn,
 					avatarJoinClause,
 					accountInvitationsTableName, archivedAtColumn,
-					accountInvitationsTableName, accountInvitationsExpiresAtColumn, currentTimeExpression,
+					accountInvitationsTableName, accountInvitationsExpiresAtColumn, currentTimeExpression(database),
 					accountInvitationsTableName, accountInvitationsTokenColumn, accountInvitationsTokenColumn,
 					accountInvitationsTableName, idColumn, idColumn,
 				)),
@@ -233,7 +234,7 @@ WHERE %s.%s IS NULL
 					usersTableName, accountInvitationsTableName, fromUserColumn, usersTableName, idColumn,
 					avatarJoinClause,
 					accountInvitationsTableName, archivedAtColumn,
-					accountInvitationsTableName, accountInvitationsExpiresAtColumn, currentTimeExpression,
+					accountInvitationsTableName, accountInvitationsExpiresAtColumn, currentTimeExpression(database),
 					accountInvitationsTableName, accountInvitationsTokenColumn, accountInvitationsTokenColumn,
 				)),
 			},
@@ -256,7 +257,7 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(accountInvitationsTableName, true, true, []string{}),
+					buildFilterCountSelect(accountInvitationsTableName, database, true, true, []string{}),
 					buildTotalCountSelect(accountInvitationsTableName, true, []string{}),
 					accountInvitationsTableName,
 					accountsTableName, accountInvitationsTableName, destinationAccountColumn, accountsTableName, idColumn,
@@ -265,7 +266,7 @@ WHERE %s.%s IS NULL
 					accountInvitationsTableName, archivedAtColumn,
 					accountInvitationsTableName, fromUserColumn, fromUserColumn,
 					accountInvitationsTableName, accountInvitationsStatusColumn, accountInvitationsStatusColumn,
-					buildFilterConditions(accountInvitationsTableName, true, false),
+					buildFilterConditions(accountInvitationsTableName, database, true, false),
 					buildCursorLimitClause(accountInvitationsTableName),
 				)),
 			},
@@ -288,7 +289,7 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(accountInvitationsTableName, true, true, []string{}),
+					buildFilterCountSelect(accountInvitationsTableName, database, true, true, []string{}),
 					buildTotalCountSelect(accountInvitationsTableName, true, []string{}),
 					accountInvitationsTableName,
 					accountsTableName, accountInvitationsTableName, destinationAccountColumn, accountsTableName, idColumn,
@@ -299,6 +300,7 @@ WHERE %s.%s IS NULL
 					accountInvitationsTableName, accountInvitationsStatusColumn, accountInvitationsStatusColumn,
 					buildFilterConditions(
 						accountInvitationsTableName,
+						database,
 						true,
 						true,
 					),
@@ -320,8 +322,8 @@ WHERE %s IS NULL
 					accountInvitationsTableName,
 					accountInvitationsStatusColumn, accountInvitationsStatusColumn,
 					accountInvitationsStatusNoteColumn, accountInvitationsStatusNoteColumn,
-					lastUpdatedAtColumn, currentTimeExpression,
-					archivedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
+					archivedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),

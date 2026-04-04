@@ -50,7 +50,7 @@ This document outlines all the steps required before submitting the Zhuzh iOS ap
 - [ ] Create new app (My Apps → + → New App)
 - [ ] Set app name: "Zhuzh"
 - [ ] Select bundle ID: `com.zhuzh.ios`
-- [ ] Set primary language and category (Food & Drink)
+- [ ] Set primary language and category (Productivity)
 
 ### App Information
 
@@ -236,7 +236,7 @@ If Universal Links aren't working:
 Document what data is collected:
 
 - [ ] Account information (email, username)
-- [ ] User content (recipes, meal plans)
+- [ ] User content (comments, issue reports, uploads)
 - [ ] Usage data (analytics)
 - [ ] Device identifiers
 
@@ -273,11 +273,11 @@ Document what data is collected:
 
 #### Core Features
 
-- [ ] Browse recipes
-- [ ] Create meal plans
-- [ ] View meal plan details
-- [ ] Grocery list generation
-- [ ] Recipe performance/cooking mode
+- [ ] Create and view comments
+- [ ] Submit issue reports
+- [ ] Upload media
+- [ ] View notifications
+- [ ] Manage webhooks
 
 #### Account Management
 
@@ -289,7 +289,7 @@ Document what data is collected:
 
 - [ ] No network connection handling
 - [ ] Session expiration handling
-- [ ] Large data sets (many recipes, meal plans)
+- [ ] Large data sets (many issue reports, comments)
 - [ ] Different device sizes
 
 ### TestFlight Beta Testing

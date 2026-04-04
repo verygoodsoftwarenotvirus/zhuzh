@@ -12,7 +12,7 @@ func init() {
 
 func buildQueueTestMessagesQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 		return []*Query{
 			{
 				Annotation: QueryAnnotation{
@@ -26,7 +26,7 @@ func buildQueueTestMessagesQueries(database string) []*Query {
 					Name: "AcknowledgeQueueTestMessage",
 					Type: ExecType,
 				},
-				Content: fmt.Sprintf(`UPDATE %s SET acknowledged_at = NOW() WHERE id = sqlc.arg(id);`, queueTestMessagesTableName),
+				Content: fmt.Sprintf(`UPDATE %s SET acknowledged_at = %s WHERE id = sqlc.arg(id);`, queueTestMessagesTableName, currentTimeExpression(database)),
 			},
 			{
 				Annotation: QueryAnnotation{

@@ -34,7 +34,7 @@ var issueReportsColumns = []string{
 
 func buildIssueReportsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 		insertColumns := filterForInsert(issueReportsColumns)
 		fullSelectColumns := applyToEach(issueReportsColumns, func(_ int, s string) string {
 			return fullColumnName(issueReportsTableName, s)
@@ -72,7 +72,7 @@ WHERE %s IS NULL
 					strings.Join(applyToEach(filterForUpdate(issueReportsColumns, createdByUserColumn, belongsToAccountColumn), func(_ int, s string) string {
 						return fmt.Sprintf("%s = sqlc.arg(%s)", s, s)
 					}), ",\n\t"),
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),
@@ -88,8 +88,8 @@ WHERE %s IS NULL
 WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					issueReportsTableName,
-					lastUpdatedAtColumn, currentTimeExpression,
-					archivedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
+					archivedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),
@@ -141,11 +141,11 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(issueReportsTableName, true, true, nil),
+					buildFilterCountSelect(issueReportsTableName, database, true, true, nil),
 					buildTotalCountSelect(issueReportsTableName, true, nil),
 					issueReportsTableName,
 					issueReportsTableName, archivedAtColumn,
-					buildFilterConditions(issueReportsTableName, true, false),
+					buildFilterConditions(issueReportsTableName, database, true, false),
 					buildCursorLimitClause(issueReportsTableName),
 				)),
 			},
@@ -164,12 +164,12 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(issueReportsTableName, true, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", issueReportsTableName, belongsToAccountColumn, belongsToAccountColumn)),
+					buildFilterCountSelect(issueReportsTableName, database, true, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", issueReportsTableName, belongsToAccountColumn, belongsToAccountColumn)),
 					buildTotalCountSelect(issueReportsTableName, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", issueReportsTableName, belongsToAccountColumn, belongsToAccountColumn)),
 					issueReportsTableName,
 					issueReportsTableName, archivedAtColumn,
 					issueReportsTableName, belongsToAccountColumn, belongsToAccountColumn,
-					buildFilterConditions(issueReportsTableName, true, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", issueReportsTableName, belongsToAccountColumn, belongsToAccountColumn)),
+					buildFilterConditions(issueReportsTableName, database, true, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", issueReportsTableName, belongsToAccountColumn, belongsToAccountColumn)),
 					buildCursorLimitClause(issueReportsTableName),
 				)),
 			},
@@ -188,12 +188,12 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(issueReportsTableName, true, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", issueReportsTableName, relevantTableColumn, relevantTableColumn)),
+					buildFilterCountSelect(issueReportsTableName, database, true, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", issueReportsTableName, relevantTableColumn, relevantTableColumn)),
 					buildTotalCountSelect(issueReportsTableName, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", issueReportsTableName, relevantTableColumn, relevantTableColumn)),
 					issueReportsTableName,
 					issueReportsTableName, archivedAtColumn,
 					issueReportsTableName, relevantTableColumn, relevantTableColumn,
-					buildFilterConditions(issueReportsTableName, true, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", issueReportsTableName, relevantTableColumn, relevantTableColumn)),
+					buildFilterConditions(issueReportsTableName, database, true, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", issueReportsTableName, relevantTableColumn, relevantTableColumn)),
 					buildCursorLimitClause(issueReportsTableName),
 				)),
 			},
@@ -213,7 +213,7 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(issueReportsTableName, true, true, nil,
+					buildFilterCountSelect(issueReportsTableName, database, true, true, nil,
 						fmt.Sprintf("%s.%s = sqlc.arg(%s)", issueReportsTableName, relevantTableColumn, relevantTableColumn),
 						fmt.Sprintf("%s.%s = sqlc.arg(%s)", issueReportsTableName, relevantRecordIDColumn, relevantRecordIDColumn)),
 					buildTotalCountSelect(issueReportsTableName, true, nil,
@@ -223,7 +223,7 @@ WHERE %s.%s IS NULL
 					issueReportsTableName, archivedAtColumn,
 					issueReportsTableName, relevantTableColumn, relevantTableColumn,
 					issueReportsTableName, relevantRecordIDColumn, relevantRecordIDColumn,
-					buildFilterConditions(issueReportsTableName, true, false,
+					buildFilterConditions(issueReportsTableName, database, true, false,
 						fmt.Sprintf("%s.%s = sqlc.arg(%s)", issueReportsTableName, relevantTableColumn, relevantTableColumn),
 						fmt.Sprintf("%s.%s = sqlc.arg(%s)", issueReportsTableName, relevantRecordIDColumn, relevantRecordIDColumn)),
 					buildCursorLimitClause(issueReportsTableName),

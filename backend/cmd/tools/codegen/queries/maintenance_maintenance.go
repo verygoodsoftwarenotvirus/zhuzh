@@ -32,10 +32,24 @@ func getAllTables() []string {
 	return tables
 }
 
+func buildDestroyAllDataContent(database string) string {
+	switch database {
+	case sqlite:
+		tables := getAllTables()
+		stmts := make([]string, 0, len(tables))
+		for _, t := range tables {
+			stmts = append(stmts, fmt.Sprintf("DELETE FROM %s;", t))
+		}
+		return strings.Join(stmts, "\n")
+	default:
+		return fmt.Sprintf(`TRUNCATE %s CASCADE;`, strings.Join(getAllTables(), ", "))
+	}
+}
+
 func buildMaintenanceQueries(database string) []*Query {
 	switch database {
-	case postgres:
-		const oneDayAgo = `(NOW() - interval '1 day')`
+	case postgres, sqlite:
+		oneDayAgo := pastIntervalExpression(database, "1 day")
 		queries := []*Query{
 			{
 				Annotation: QueryAnnotation{
@@ -49,7 +63,7 @@ func buildMaintenanceQueries(database string) []*Query {
 					Name: "DestroyAllData",
 					Type: ExecType,
 				},
-				Content: fmt.Sprintf(`TRUNCATE %s CASCADE;`, strings.Join(getAllTables(), ", ")),
+				Content: buildDestroyAllDataContent(database),
 			},
 		}
 		return append(queries, buildQueueTestMessagesQueries(database)...)

@@ -144,6 +144,8 @@ func (r *repository) GetDefaultAccountIDForUser(ctx context.Context, userID stri
 }
 
 // markAccountAsUserDefault marks a given account as the user's default.
+// querier must be the executor to use (either a *sql.Tx or *sql.DB); callers are
+// responsible for managing any surrounding transaction.
 func (r *repository) markAccountAsUserDefault(ctx context.Context, querier database.SQLQueryExecutor, userID, accountID string) error {
 	ctx, span := r.tracer.StartSpan(ctx)
 	defer span.End()
@@ -160,19 +162,14 @@ func (r *repository) markAccountAsUserDefault(ctx context.Context, querier datab
 	tracing.AttachToSpan(span, identitykeys.UserIDKey, userID)
 	tracing.AttachToSpan(span, identitykeys.AccountIDKey, accountID)
 
-	tx, err := r.writeDB.BeginTx(ctx, nil)
-	if err != nil {
-		return observability.PrepareAndLogError(err, logger, span, "beginning transaction")
-	}
-
-	if err = r.generatedQuerier.MarkAccountUserMembershipAsUserDefault(ctx, querier, &generated.MarkAccountUserMembershipAsUserDefaultParams{
+	if err := r.generatedQuerier.MarkAccountUserMembershipAsUserDefault(ctx, querier, &generated.MarkAccountUserMembershipAsUserDefaultParams{
 		BelongsToUser:    userID,
 		BelongsToAccount: accountID,
 	}); err != nil {
 		return observability.PrepareAndLogError(err, logger, span, "assigning user default account")
 	}
 
-	if _, err = r.auditLogEntryRepo.CreateAuditLogEntry(ctx, tx, &audit.AuditLogEntryDatabaseCreationInput{
+	if _, err := r.auditLogEntryRepo.CreateAuditLogEntry(ctx, querier, &audit.AuditLogEntryDatabaseCreationInput{
 		BelongsToAccount: &accountID,
 		ID:               identifiers.New(),
 		ResourceType:     resourceTypeAccountUserMemberships,
@@ -185,12 +182,7 @@ func (r *repository) markAccountAsUserDefault(ctx context.Context, querier datab
 			},
 		},
 	}); err != nil {
-		r.RollbackTransaction(ctx, tx)
 		return observability.PrepareError(err, span, "creating audit log entry")
-	}
-
-	if err = tx.Commit(); err != nil {
-		return observability.PrepareAndLogError(err, logger, span, "committing transaction")
 	}
 
 	logger.Debug("account marked as default")
@@ -200,7 +192,24 @@ func (r *repository) markAccountAsUserDefault(ctx context.Context, querier datab
 
 // MarkAccountAsUserDefault does a thing.
 func (r *repository) MarkAccountAsUserDefault(ctx context.Context, userID, accountID string) error {
-	return r.markAccountAsUserDefault(ctx, r.writeDB, userID, accountID)
+	ctx, span := r.tracer.StartSpan(ctx)
+	defer span.End()
+
+	tx, err := r.writeDB.BeginTx(ctx, nil)
+	if err != nil {
+		return observability.PrepareAndLogError(err, r.logger, span, "beginning transaction")
+	}
+
+	if err = r.markAccountAsUserDefault(ctx, tx, userID, accountID); err != nil {
+		r.RollbackTransaction(ctx, tx)
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return observability.PrepareAndLogError(err, r.logger, span, "committing transaction")
+	}
+
+	return nil
 }
 
 // UserIsMemberOfAccount does a thing.

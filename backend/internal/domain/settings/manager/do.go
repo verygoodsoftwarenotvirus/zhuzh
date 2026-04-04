@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/settings"
-	settingsrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/settings"
 
 	"github.com/verygoodsoftwarenotvirus/platform/v4/messagequeue"
 	msgconfig "github.com/verygoodsoftwarenotvirus/platform/v4/messagequeue/config"
@@ -16,27 +15,14 @@ import (
 
 // RegisterSettingsDataManager registers the settings data manager with the injector.
 func RegisterSettingsDataManager(i do.Injector) {
-	// Register the repo provider (was included in wire.NewSet)
-	settingsrepo.RegisterSettingsRepository(i)
-
-	// Bind *settingsrepo.Repository to the settingsRepo interface
-	do.Provide[settingsRepo](i, func(i do.Injector) (settingsRepo, error) {
-		return do.MustInvoke[*settingsrepo.Repository](i), nil
-	})
-
 	do.Provide[SettingsDataManager](i, func(i do.Injector) (SettingsDataManager, error) {
 		return NewSettingsDataManager(
 			do.MustInvoke[context.Context](i),
 			do.MustInvoke[tracing.TracerProvider](i),
 			do.MustInvoke[logging.Logger](i),
-			do.MustInvoke[settingsRepo](i),
+			do.MustInvoke[settings.Repository](i),
 			do.MustInvoke[*msgconfig.QueuesConfig](i),
 			do.MustInvoke[messagequeue.PublisherProvider](i),
 		)
-	})
-
-	// Bind SettingsDataManager to settings.Repository
-	do.Provide[settings.Repository](i, func(i do.Injector) (settings.Repository, error) {
-		return do.MustInvoke[SettingsDataManager](i), nil
 	})
 }

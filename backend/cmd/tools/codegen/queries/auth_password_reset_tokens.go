@@ -31,7 +31,7 @@ var passwordResetTokensColumns = []string{
 
 func buildPasswordResetTokensQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		insertColumns := filterForInsert(passwordResetTokensColumns, "redeemed_at")
 
@@ -46,14 +46,14 @@ func buildPasswordResetTokensQueries(database string) []*Query {
 ) VALUES (
 	sqlc.arg(%s),
 	sqlc.arg(%s),
-	%s + (30 * '1 minutes'::INTERVAL),
+	%s,
 	sqlc.arg(%s)
 );`,
 					passwordResetTokensTableName,
 					strings.Join(insertColumns, ",\n\t"),
 					idColumn,
 					passwordResetTokenColumn,
-					currentTimeExpression,
+					futureIntervalExpression(database, "30 minutes"),
 					belongsToUserColumn,
 				)),
 			},
@@ -73,7 +73,7 @@ WHERE %s.%s IS NULL
 					}), ",\n\t"),
 					passwordResetTokensTableName,
 					passwordResetTokensTableName, redeemedAtColumn,
-					currentTimeExpression, passwordResetTokensTableName, passwordResetTokenExpiresAtColumn,
+					currentTimeExpression(database), passwordResetTokensTableName, passwordResetTokenExpiresAtColumn,
 					passwordResetTokensTableName, passwordResetTokenColumn, passwordResetTokenColumn,
 				)),
 			},
@@ -93,7 +93,7 @@ WHERE %s.%s IS NULL
 					}), ",\n\t"),
 					passwordResetTokensTableName,
 					passwordResetTokensTableName, redeemedAtColumn,
-					currentTimeExpression, passwordResetTokensTableName, passwordResetTokenExpiresAtColumn,
+					currentTimeExpression(database), passwordResetTokensTableName, passwordResetTokenExpiresAtColumn,
 					passwordResetTokensTableName, idColumn, idColumn,
 				)),
 			},
@@ -107,7 +107,7 @@ WHERE %s.%s IS NULL
 WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					passwordResetTokensTableName,
-					redeemedAtColumn, currentTimeExpression,
+					redeemedAtColumn, currentTimeExpression(database),
 					redeemedAtColumn,
 					idColumn, idColumn,
 				)),

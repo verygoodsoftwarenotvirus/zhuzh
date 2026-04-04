@@ -48,7 +48,6 @@ The system uses a clear data ownership model where most data is associated with 
 
 - User profile data: `BelongsToUser`
 - Account settings: `BelongsToAccount`
-- Meal plans: `BelongsToAccount`
 - Webhooks: `BelongsToAccount`
 
 ## Authentication and Session Management
@@ -132,7 +131,7 @@ The system has two account-level roles and two service-level roles:
 - **Service User**: Can create webhooks and read information about accounts they're part of
 - **Service Admin**: Can run workers arbitrarily and publish arbitrary messages to queues
 
-**Note**: Account-level roles primarily govern meal planning activities. Future plans include switching from string-based roles to bitmask-based roles for better performance and flexibility.
+**Note**: Account-level roles govern access to account-owned resources. Future plans include switching from string-based roles to bitmask-based roles for better performance and flexibility.
 
 **Permission System**: [`internal/authorization/account_role.go`](internal/authorization/account_role.go)
 

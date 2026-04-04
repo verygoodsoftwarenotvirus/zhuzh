@@ -88,7 +88,7 @@ func TestQuerier_Integration_Comments(t *testing.T) {
 
 	user := pgtesting.CreateUserForTest(t, nil, dbc.writeDB)
 	referencedID := identifiers.New()
-	targetType := "recipes"
+	targetType := "issue_reports"
 
 	input := fakes.BuildFakeCommentDatabaseCreationInput()
 	input.BelongsToUser = user.ID
@@ -153,7 +153,7 @@ func TestQuerier_Integration_Comments_WithReplies(t *testing.T) {
 
 	user := pgtesting.CreateUserForTest(t, nil, dbc.writeDB)
 	referencedID := identifiers.New()
-	targetType := "recipes"
+	targetType := "issue_reports"
 
 	// create parent comment
 	parentInput := fakes.BuildFakeCommentDatabaseCreationInput()
@@ -284,7 +284,7 @@ func TestQuerier_GetCommentsForReference(T *testing.T) {
 		ctx := t.Context()
 		c := buildInertClientForTest(t)
 
-		actual, err := c.GetCommentsForReference(ctx, "recipes", "", nil)
+		actual, err := c.GetCommentsForReference(ctx, "issue_reports", "", nil)
 		assert.Error(t, err)
 		assert.Nil(t, actual)
 	})
@@ -347,7 +347,7 @@ func TestQuerier_ArchiveCommentsForReference(T *testing.T) {
 		ctx := t.Context()
 		c := buildInertClientForTest(t)
 
-		err := c.ArchiveCommentsForReference(ctx, "recipes", "")
+		err := c.ArchiveCommentsForReference(ctx, "issue_reports", "")
 		assert.Error(t, err)
 	})
 }
@@ -367,7 +367,7 @@ func TestQuerier_Integration_Comments_CursorPagination(t *testing.T) {
 
 	user := pgtesting.CreateUserForTest(t, nil, dbc.writeDB)
 	referencedID := identifiers.New()
-	targetType := "meals"
+	targetType := "issue_reports"
 
 	pgtesting.TestCursorBasedPagination(t, ctx, pgtesting.PaginationTestConfig[comments.Comment]{
 		TotalItems: 9,

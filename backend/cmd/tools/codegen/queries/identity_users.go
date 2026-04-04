@@ -78,12 +78,12 @@ var usersColumns = []string{
 	archivedAtColumn,
 }
 
-func buildUpdateAccountMembershipsQuery(ownershipColumn string, nowColumns []string) string {
+func buildUpdateAccountMembershipsQuery(ownershipColumn, database string, nowColumns []string) string {
 	var updateQueryBuilder builq.Builder
 
 	addendum := ""
 	for _, col := range nowColumns {
-		addendum = fmt.Sprintf(",\n\t%s = %s", col, currentTimeExpression)
+		addendum = fmt.Sprintf(",\n\t%s = %s", col, currentTimeExpression(database))
 	}
 
 	builder := updateQueryBuilder.Addf(
@@ -93,7 +93,7 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 		accountUserMembershipsTableName,
 		archivedAtColumn,
-		currentTimeExpression,
+		currentTimeExpression(database),
 		addendum,
 		archivedAtColumn,
 		ownershipColumn,
@@ -103,12 +103,12 @@ WHERE %s IS NULL
 	return buildRawQuery(builder)
 }
 
-func buildUserUpdateQuery(columnName string, nowColumns []string) string {
+func buildUserUpdateQuery(columnName, database string, nowColumns []string) string {
 	var updateQueryBuilder builq.Builder
 
 	addendum := ""
 	for _, col := range nowColumns {
-		addendum = fmt.Sprintf(",\n\t%s = %s", col, currentTimeExpression)
+		addendum = fmt.Sprintf(",\n\t%s = %s", col, currentTimeExpression(database))
 	}
 
 	builder := updateQueryBuilder.Addf(
@@ -118,7 +118,7 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 		usersTableName,
 		columnName,
-		currentTimeExpression,
+		currentTimeExpression(database),
 		addendum,
 		archivedAtColumn,
 		idColumn,
@@ -130,7 +130,7 @@ WHERE %s IS NULL
 
 func buildUsersQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		insertColumns := filterForInsert(usersColumns,
 			"password_last_changed_at",
@@ -146,14 +146,14 @@ func buildUsersQueries(database string) []*Query {
 					Name: "AcceptPrivacyPolicyForUser",
 					Type: ExecType,
 				},
-				Content: buildUserUpdateQuery(lastAcceptedPrivacyPolicyColumn, nil),
+				Content: buildUserUpdateQuery(lastAcceptedPrivacyPolicyColumn, database, nil),
 			},
 			{
 				Annotation: QueryAnnotation{
 					Name: "AcceptTermsOfServiceForUser",
 					Type: ExecType,
 				},
-				Content: buildUserUpdateQuery(lastAcceptedTOSColumn, nil),
+				Content: buildUserUpdateQuery(lastAcceptedTOSColumn, database, nil),
 			},
 			{
 				Annotation: QueryAnnotation{
@@ -163,7 +163,7 @@ func buildUsersQueries(database string) []*Query {
 				Content: buildRawQuery((&builq.Builder{}).Addf(`UPDATE %s SET %s = %s WHERE %s IS NULL AND %s = sqlc.arg(%s);`,
 					usersTableName,
 					archivedAtColumn,
-					currentTimeExpression,
+					currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn,
 					idColumn,
@@ -208,10 +208,15 @@ func buildUsersQueries(database string) []*Query {
 	%s
 FROM %s
 	%s
-	JOIN %s ON %s.%s = %s.%s AND %s.%s IS NULL AND %s.%s IS NULL
-	JOIN %s ON %s.%s = %s.%s AND %s.%s IS NULL
 WHERE %s.%s IS NULL
-	AND %s.%s = 'service_admin'
+	AND EXISTS (
+		SELECT 1 FROM %s
+			JOIN %s ON %s.%s = %s.%s AND %s.%s IS NULL
+		WHERE %s.%s = %s.%s
+			AND %s.%s IS NULL
+			AND %s.%s IS NULL
+			AND %s.%s = 'service_admin'
+	)
 	AND %s.%s = sqlc.arg(%s)
 	AND %s.%s IS NOT NULL;`,
 					strings.Join(applyToEach(usersColumns, func(_ int, s string) string {
@@ -220,9 +225,12 @@ WHERE %s.%s IS NULL
 					strings.Join(avatarJoinSelect("avatar"), ",\n\t"),
 					usersTableName,
 					avatarJoinClause,
-					userRoleAssignmentsTableName, userRoleAssignmentsTableName, userIDColumn, usersTableName, idColumn, userRoleAssignmentsTableName, accountIDColumn, userRoleAssignmentsTableName, archivedAtColumn,
-					userRolesTableName, userRolesTableName, idColumn, userRoleAssignmentsTableName, roleIDColumn, userRolesTableName, archivedAtColumn,
 					usersTableName, archivedAtColumn,
+					userRoleAssignmentsTableName,
+					userRolesTableName, userRolesTableName, idColumn, userRoleAssignmentsTableName, roleIDColumn, userRolesTableName, archivedAtColumn,
+					userRoleAssignmentsTableName, userIDColumn, usersTableName, idColumn,
+					userRoleAssignmentsTableName, accountIDColumn,
+					userRoleAssignmentsTableName, archivedAtColumn,
 					userRolesTableName, nameColumn,
 					usersTableName, usernameColumn, usernameColumn,
 					usersTableName, twoFactorSecretVerifiedAtColumn,
@@ -353,13 +361,14 @@ WHERE %s.%s IS NULL
 						return fmt.Sprintf("%s.%s", usersTableName, s)
 					}), ",\n\t"),
 					strings.Join(avatarJoinSelect("avatar"), ",\n\t"),
-					buildFilterCountSelect(usersTableName, true, true, []string{}),
+					buildFilterCountSelect(usersTableName, database, true, true, []string{}),
 					buildTotalCountSelect(usersTableName, true, []string{}),
 					usersTableName,
 					avatarJoinClause,
 					usersTableName, archivedAtColumn,
 					buildFilterConditions(
 						usersTableName,
+						database,
 						true,
 						true,
 					),
@@ -378,21 +387,35 @@ WHERE %s.%s IS NULL
 	%s
 FROM %s
 	%s
-JOIN %s ON %s.%s = %s.%s
 WHERE %s.%s IS NULL
+	AND EXISTS (
+		SELECT 1 FROM %s
+		WHERE %s.%s = %s.%s
+			AND %s.%s = sqlc.arg(%s)
+			AND %s.%s IS NULL
+	)
 	%s
 %s;`,
 					strings.Join(applyToEach(usersColumns, func(_ int, s string) string {
 						return fmt.Sprintf("%s.%s", usersTableName, s)
 					}), ",\n\t"),
 					strings.Join(avatarJoinSelect("avatar"), ",\n\t"),
-					buildFilterCountSelect(usersTableName, true, true, nil),
-					buildTotalCountSelect(usersTableName, true, []string{}, fmt.Sprintf("%s.%s = sqlc.arg(%s)", accountUserMembershipsTableName, belongsToAccountColumn, belongsToAccountColumn)),
+					buildFilterCountSelect(usersTableName, database, true, true,
+						[]string{fmt.Sprintf("%s ON %s.%s = %s.%s AND %s.%s IS NULL", accountUserMembershipsTableName, accountUserMembershipsTableName, belongsToUserColumn, usersTableName, idColumn, accountUserMembershipsTableName, archivedAtColumn)},
+						fmt.Sprintf("%s.%s = sqlc.arg(%s)", accountUserMembershipsTableName, belongsToAccountColumn, belongsToAccountColumn),
+					),
+					buildTotalCountSelect(usersTableName, true,
+						[]string{fmt.Sprintf("%s ON %s.%s = %s.%s AND %s.%s IS NULL", accountUserMembershipsTableName, accountUserMembershipsTableName, belongsToUserColumn, usersTableName, idColumn, accountUserMembershipsTableName, archivedAtColumn)},
+						fmt.Sprintf("%s.%s = sqlc.arg(%s)", accountUserMembershipsTableName, belongsToAccountColumn, belongsToAccountColumn),
+					),
 					usersTableName,
 					avatarJoinClause,
-					accountUserMembershipsTableName, accountUserMembershipsTableName, belongsToUserColumn, usersTableName, idColumn,
 					usersTableName, archivedAtColumn,
-					buildFilterConditions(usersTableName, true, true, fmt.Sprintf("%s.%s = sqlc.arg(%s)", accountUserMembershipsTableName, belongsToAccountColumn, belongsToAccountColumn), fmt.Sprintf("%s.%s IS NULL", accountUserMembershipsTableName, archivedAtColumn)),
+					accountUserMembershipsTableName,
+					accountUserMembershipsTableName, belongsToUserColumn, usersTableName, idColumn,
+					accountUserMembershipsTableName, belongsToAccountColumn, belongsToAccountColumn,
+					accountUserMembershipsTableName, archivedAtColumn,
+					buildFilterConditions(usersTableName, database, true, true),
 					buildCursorLimitClause(usersTableName),
 				)),
 			},
@@ -407,7 +430,7 @@ WHERE %s.%s IS NULL
 FROM %s
 	%s
 WHERE %s.%s IS NULL
-	AND %s.%s = ANY(sqlc.arg(ids)::text[]);`,
+	AND %s;`,
 					strings.Join(applyToEach(usersColumns, func(i int, s string) string {
 						return fmt.Sprintf("%s.%s", usersTableName, s)
 					}), ",\n\t"),
@@ -416,8 +439,7 @@ WHERE %s.%s IS NULL
 					avatarJoinClause,
 					usersTableName,
 					archivedAtColumn,
-					usersTableName,
-					idColumn,
+					anyInExpression(database, fmt.Sprintf("%s.%s", usersTableName, idColumn), "ids"),
 				)),
 			},
 			{
@@ -444,12 +466,12 @@ WHERE %s.%s IS NULL
 FROM %s
 WHERE %s.%s IS NULL
 	AND %s.%s IS NULL
-	OR %s.%s < %s - '24 hours'::INTERVAL;`,
+	OR %s.%s < %s;`,
 					usersTableName, idColumn,
 					usersTableName,
 					usersTableName, archivedAtColumn,
 					usersTableName, lastIndexedAtColumn,
-					usersTableName, lastIndexedAtColumn, currentTimeExpression,
+					usersTableName, lastIndexedAtColumn, pastIntervalExpression(database, "24 hours"),
 				)),
 			},
 			{
@@ -513,8 +535,8 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s)
 	AND %s = sqlc.arg(%s);`,
 					usersTableName,
-					emailAddressVerifiedAtColumn, currentTimeExpression,
-					lastUpdatedAtColumn, currentTimeExpression,
+					emailAddressVerifiedAtColumn, currentTimeExpression(database),
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					emailAddressVerifiedAtColumn,
 					idColumn, idColumn,
@@ -534,7 +556,7 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					usersTableName,
 					emailAddressVerifiedAtColumn,
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					emailAddressVerifiedAtColumn,
 					idColumn, idColumn,
@@ -555,7 +577,7 @@ WHERE %s IS NULL
 					twoFactorSecretVerifiedAtColumn,
 					twoFactorSecretColumn, twoFactorSecretColumn,
 					lastUpdatedAtColumn,
-					currentTimeExpression,
+					currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn,
 					idColumn,
@@ -572,8 +594,8 @@ WHERE %s IS NULL
 WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					usersTableName,
-					twoFactorSecretVerifiedAtColumn, currentTimeExpression,
-					lastUpdatedAtColumn, currentTimeExpression,
+					twoFactorSecretVerifiedAtColumn, currentTimeExpression(database),
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),
@@ -598,7 +620,7 @@ WHERE %s.%s IS NULL
 						return fmt.Sprintf("%s.%s", usersTableName, s)
 					}), ",\n\t"),
 					strings.Join(avatarJoinSelect("avatar"), ",\n\t"),
-					buildFilterCountSelect(usersTableName, true, true, []string{}),
+					buildFilterCountSelect(usersTableName, database, true, true, []string{}),
 					buildTotalCountSelect(usersTableName, true, []string{}),
 					usersTableName,
 					avatarJoinClause,
@@ -606,9 +628,10 @@ WHERE %s.%s IS NULL
 					archivedAtColumn,
 					usersTableName,
 					usernameColumn,
-					buildILIKEForArgument(usernameColumn),
+					buildILIKEForArgument(database, usernameColumn),
 					buildFilterConditions(
 						usersTableName,
+						database,
 						true,
 						true,
 					),
@@ -631,7 +654,7 @@ WHERE %s IS NULL
 					firstNameColumn, firstNameColumn,
 					lastNameColumn, lastNameColumn,
 					birthdayColumn, birthdayColumn,
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),
@@ -651,7 +674,7 @@ WHERE %s IS NULL
 					emailAddressColumn, emailAddressColumn,
 					emailAddressVerifiedAtColumn,
 					lastUpdatedAtColumn,
-					currentTimeExpression,
+					currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),
@@ -664,7 +687,7 @@ WHERE %s IS NULL
 				Content: buildRawQuery((&builq.Builder{}).Addf(`UPDATE %s SET %s = %s WHERE %s = sqlc.arg(%s) AND %s IS NULL;`,
 					usersTableName,
 					lastIndexedAtColumn,
-					currentTimeExpression,
+					currentTimeExpression(database),
 					idColumn,
 					idColumn,
 					archivedAtColumn,
@@ -685,8 +708,8 @@ WHERE %s IS NULL
 					usersTableName,
 					hashedPasswordColumn, hashedPasswordColumn,
 					requiresPasswordChangeColumn,
-					passwordLastChangedAtColumn, currentTimeExpression,
-					lastUpdatedAtColumn, currentTimeExpression,
+					passwordLastChangedAtColumn, currentTimeExpression(database),
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),
@@ -705,7 +728,7 @@ WHERE %s IS NULL
 					usersTableName,
 					twoFactorSecretVerifiedAtColumn,
 					twoFactorSecretColumn, twoFactorSecretColumn,
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),
@@ -722,7 +745,7 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					usersTableName,
 					usernameColumn, usernameColumn,
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),

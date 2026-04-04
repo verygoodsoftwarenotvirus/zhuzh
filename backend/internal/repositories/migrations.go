@@ -2,6 +2,7 @@ package repositories
 
 import (
 	postgresmigrations "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/migrations"
+	sqlitemigrations "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/sqlite/migrations"
 
 	"github.com/verygoodsoftwarenotvirus/platform/v4/database"
 	databasecfg "github.com/verygoodsoftwarenotvirus/platform/v4/database/config"
@@ -16,6 +17,8 @@ func ProvideMigrator(
 	switch cfg.Provider {
 	case databasecfg.ProviderPostgres:
 		return postgresmigrations.NewMigrator(logger)
+	case databasecfg.ProviderSQLite:
+		return sqlitemigrations.NewMigrator(logger)
 	default:
 		return nil
 	}

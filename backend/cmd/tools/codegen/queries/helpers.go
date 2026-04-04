@@ -28,8 +28,47 @@ const (
 	cursorArg          = "cursor"
 	limitArg           = "result_limit"
 
-	currentTimeExpression = "NOW()"
+	sqlite = "sqlite"
 )
+
+func currentTimeExpression(database string) string {
+	switch database {
+	case sqlite:
+		return "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"
+	default:
+		return "NOW()"
+	}
+}
+
+func pastIntervalExpression(database, interval string) string {
+	switch database {
+	case sqlite:
+		return fmt.Sprintf("strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now', '-%s')", interval)
+	default:
+		return fmt.Sprintf("(SELECT NOW() - '%s'::INTERVAL)", interval)
+	}
+}
+
+func futureIntervalExpression(database, interval string) string {
+	switch database {
+	case sqlite:
+		return fmt.Sprintf("strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now', '+%s')", interval)
+	default:
+		return fmt.Sprintf("(SELECT NOW() + '%s'::INTERVAL)", interval)
+	}
+}
+
+// anyInExpression returns the appropriate SQL for checking membership in a set of values.
+// For PostgreSQL: column = ANY(sqlc.arg(argName)::text[])
+// For SQLite: column IN (sqlc.slice(argName)).
+func anyInExpression(database, column, argName string) string {
+	switch database {
+	case sqlite:
+		return fmt.Sprintf("%s IN (sqlc.slice(%s))", column, argName)
+	default:
+		return fmt.Sprintf("%s = ANY(sqlc.arg(%s)::text[])", column, argName)
+	}
+}
 
 func applyToEach[T comparable](x []T, f func(int, T) T) []T {
 	output := []T{}
@@ -87,35 +126,38 @@ func mergeColumns(columns1, columns2 []string, indexToInsertSecondSet int) []str
 	return output
 }
 
-func buildFilterConditions(tableName string, withUpdateColumn, withArchivedAtColumn bool, conditions ...string) string {
+func buildFilterConditions(tableName, database string, withUpdateColumn, withArchivedAtColumn bool, conditions ...string) string {
+	farPast := pastIntervalExpression(database, "999 years")
+	farFuture := futureIntervalExpression(database, "999 years")
+
 	updateAddendum := ""
 	if withUpdateColumn {
 		updateAddendum = fmt.Sprintf("\n\t%s", strings.TrimSpace(buildRawQuery((&builq.Builder{}).Addf(`
 	AND (
 		%s.%s IS NULL
-		OR %s.%s > COALESCE(sqlc.narg(updated_after), (SELECT %s - '999 years'::INTERVAL))
+		OR %s.%s > COALESCE(sqlc.narg(updated_after), %s)
 	)
 	AND (
 		%s.%s IS NULL
-		OR %s.%s < COALESCE(sqlc.narg(updated_before), (SELECT %s + '999 years'::INTERVAL))
+		OR %s.%s < COALESCE(sqlc.narg(updated_before), %s)
 	)
 		`,
 			tableName,
 			lastUpdatedAtColumn,
 			tableName,
 			lastUpdatedAtColumn,
-			currentTimeExpression,
+			farPast,
 			tableName,
 			lastUpdatedAtColumn,
 			tableName,
 			lastUpdatedAtColumn,
-			currentTimeExpression,
+			farFuture,
 		))))
 	}
 
 	archivedAddendum := ""
 	if withArchivedAtColumn {
-		archivedAddendum = fmt.Sprintf("\n\t\t\tAND (NOT COALESCE(sqlc.narg(%s), false)::boolean OR %s.%s = NULL)", includeArchivedArg, tableName, archivedAtColumn)
+		archivedAddendum = buildArchivedAddendum(tableName, database)
 	}
 
 	var allConditions strings.Builder
@@ -128,14 +170,14 @@ func buildFilterConditions(tableName string, withUpdateColumn, withArchivedAtCol
 	// Add cursor-based pagination condition
 	cursorCondition := fmt.Sprintf("\n\t%s", buildCursorCondition(tableName))
 
-	rv := strings.TrimSpace(buildRawQuery((&builq.Builder{}).Addf(`AND %s.%s > COALESCE(sqlc.narg(created_after), (SELECT %s - '999 years'::INTERVAL))
-	AND %s.%s < COALESCE(sqlc.narg(created_before), (SELECT %s + '999 years'::INTERVAL))%s%s%s%s`,
+	rv := strings.TrimSpace(buildRawQuery((&builq.Builder{}).Addf(`AND %s.%s > COALESCE(sqlc.narg(created_after), %s)
+	AND %s.%s < COALESCE(sqlc.narg(created_before), %s)%s%s%s%s`,
 		tableName,
 		createdAtColumn,
-		currentTimeExpression,
+		farPast,
 		tableName,
 		createdAtColumn,
-		currentTimeExpression,
+		farFuture,
 		updateAddendum,
 		archivedAddendum,
 		allConditions.String(),
@@ -145,29 +187,43 @@ func buildFilterConditions(tableName string, withUpdateColumn, withArchivedAtCol
 	return rv
 }
 
-func buildFilterCountSelect(tableName string, withUpdateColumn, withArchivedAtColumn bool, joins []string, conditions ...string) string {
+func buildArchivedAddendum(tableName, database string) string {
+	switch database {
+	case sqlite:
+		// SQLite does not support sqlc.narg() inside subqueries; the subquery
+		// WHERE already excludes archived rows, so no addendum is needed.
+		return ""
+	default:
+		return fmt.Sprintf("\n\t\t\tAND (NOT COALESCE(sqlc.narg(%s), false)::boolean OR %s.%s = NULL)", includeArchivedArg, tableName, archivedAtColumn)
+	}
+}
+
+func buildFilterCountSelect(tableName, database string, withUpdateColumn, withArchivedAtColumn bool, joins []string, conditions ...string) string {
+	farPast := pastIntervalExpression(database, "999 years")
+	farFuture := futureIntervalExpression(database, "999 years")
+
 	updateAddendum := ""
 	if withUpdateColumn {
 		updateAddendum = fmt.Sprintf("\n\t\t\t%s", strings.TrimSpace(buildRawQuery((&builq.Builder{}).Addf(`
 			AND (
 				%s.%s IS NULL
-				OR %s.%s > COALESCE(sqlc.narg(updated_before), (SELECT %s - '999 years'::INTERVAL))
+				OR %s.%s > COALESCE(sqlc.narg(updated_before), %s)
 			)
 			AND (
 				%s.%s IS NULL
-				OR %s.%s < COALESCE(sqlc.narg(updated_after), (SELECT %s + '999 years'::INTERVAL))
+				OR %s.%s < COALESCE(sqlc.narg(updated_after), %s)
 			)
 		`,
 			tableName, lastUpdatedAtColumn,
-			tableName, lastUpdatedAtColumn, currentTimeExpression,
+			tableName, lastUpdatedAtColumn, farPast,
 			tableName, lastUpdatedAtColumn,
-			tableName, lastUpdatedAtColumn, currentTimeExpression,
+			tableName, lastUpdatedAtColumn, farFuture,
 		))))
 	}
 
 	archivedAddendum := ""
 	if withArchivedAtColumn {
-		archivedAddendum = fmt.Sprintf("\n\t\t\tAND (NOT COALESCE(sqlc.narg(%s), false)::boolean OR %s.%s = NULL)", includeArchivedArg, tableName, archivedAtColumn)
+		archivedAddendum = buildArchivedAddendum(tableName, database)
 	}
 
 	var allConditions strings.Builder
@@ -189,14 +245,14 @@ func buildFilterCountSelect(tableName string, withUpdateColumn, withArchivedAtCo
 
 	return strings.TrimSpace(buildRawQuery((&builq.Builder{}).Addf(`(
 		SELECT COUNT(%s.%s)
-		FROM %s%s%s 
-			%s.%s > COALESCE(sqlc.narg(created_after), (SELECT %s - '999 years'::INTERVAL))
-			AND %s.%s < COALESCE(sqlc.narg(created_before), (SELECT %s + '999 years'::INTERVAL))%s%s%s
+		FROM %s%s%s
+			%s.%s > COALESCE(sqlc.narg(created_after), %s)
+			AND %s.%s < COALESCE(sqlc.narg(created_before), %s)%s%s%s
 	) AS filtered_count`,
 		tableName, idColumn,
 		tableName, joinStmnt,
-		archivedAtAddendum, tableName, createdAtColumn, currentTimeExpression,
-		tableName, createdAtColumn, currentTimeExpression,
+		archivedAtAddendum, tableName, createdAtColumn, farPast,
+		tableName, createdAtColumn, farFuture,
 		updateAddendum,
 		archivedAddendum,
 		allConditions.String(),
@@ -238,8 +294,13 @@ func buildTotalCountSelect(tableName string, withArchivedAtColumn bool, joins []
 	)))
 }
 
-func buildILIKEForArgument(argumentName string) string {
-	return fmt.Sprintf(`ILIKE '%%' || sqlc.arg(%s)::text || '%%'`, argumentName)
+func buildILIKEForArgument(database, argumentName string) string {
+	switch database {
+	case sqlite:
+		return fmt.Sprintf(`LIKE '%%' || sqlc.arg(%s) || '%%'`, argumentName)
+	default:
+		return fmt.Sprintf(`ILIKE '%%' || sqlc.arg(%s)::text || '%%'`, argumentName)
+	}
 }
 
 type joinStatement struct {

@@ -258,14 +258,6 @@
 				"debug": true
 			}
 		},
-		"mealPlanning": {
-			"mediaUploadPrefix": "",
-			"uploads": {
-				"storageConfig": {},
-				"debug": false
-			},
-			"useSearchService": false
-		},
 		"auth": {
 			"tokens": {
 				"provider": "paseto",

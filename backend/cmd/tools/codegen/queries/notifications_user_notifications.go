@@ -30,7 +30,7 @@ var (
 
 func buildUserNotificationQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		insertColumns := filterForInsert(userNotificationsColumns, "status")
 		fullSelectColumns := applyToEach(userNotificationsColumns, func(_ int, s string) string {
@@ -105,6 +105,7 @@ WHERE %s%s
 					strings.Join(fullSelectColumns, ",\n\t"),
 					buildFilterCountSelect(
 						userNotificationsTableName,
+						database,
 						true,
 						false,
 						nil,
@@ -120,7 +121,7 @@ WHERE %s%s
 					),
 					userNotificationsTableName,
 					fmt.Sprintf("user_notifications.status != '%s'\n\t", userNotificationStatusDismissed),
-					buildFilterConditions(userNotificationsTableName, true, false, "user_notifications.belongs_to_user = sqlc.arg(user_id)"),
+					buildFilterConditions(userNotificationsTableName, database, true, false, "user_notifications.belongs_to_user = sqlc.arg(user_id)"),
 					buildCursorLimitClause(userNotificationsTableName),
 				)),
 			},
@@ -137,7 +138,7 @@ WHERE %s = sqlc.arg(%s);`,
 					strings.Join(applyToEach(filterForUpdate(userNotificationsColumns, contentColumn, belongsToUserColumn), func(i int, s string) string {
 						return fmt.Sprintf("%s = sqlc.arg(%s)", s, s)
 					}), ",\n\t"),
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					idColumn, idColumn,
 				)),
 			},

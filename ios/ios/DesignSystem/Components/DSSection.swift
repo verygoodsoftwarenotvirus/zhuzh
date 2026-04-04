@@ -108,7 +108,7 @@ enum DSSectionHeaderStyle {
 /// ```swift
 /// DSSectionHeader(title: "Members")
 /// DSSectionHeader(title: "Details", subtitle: "Additional information")
-/// DSSectionHeader(title: "Future Meal Plans", systemImage: "calendar.badge.clock")
+/// DSSectionHeader(title: "Upcoming Events", systemImage: "calendar.badge.clock")
 /// DSSectionHeader(title: "Upcoming", systemImage: "calendar") {
 ///   Text("3 plans").font(.caption).foregroundColor(.secondary)
 /// }
@@ -232,7 +232,7 @@ extension DSSectionHeader where Trailing == EmptyView {
 
 // MARK: - Rule-Flanked Header
 
-/// A section header with horizontal rules flanking the title, matching the recipe step flow style.
+/// A section header with horizontal rules flanking the title.
 ///
 /// Usage:
 /// ```swift

@@ -2,18 +2,18 @@
 //  DSKeepScreenAwakeButton.swift
 //  ios
 //
-//  Design System Keep Screen Awake Button - Toggles screen dimming while cooking
+//  Design System Keep Screen Awake Button - Toggles screen dimming during active use
 //
 
 import SwiftUI
 import UIKit
 
 /// A button that toggles keeping the device screen awake.
-/// When enabled, prevents the screen from dimming or locking while following a recipe.
+/// When enabled, prevents the screen from dimming or locking.
 ///
 /// Usage:
 /// ```swift
-/// DSKeepScreenAwakeButton(inline: true)  // Full-width card above recipe steps
+/// DSKeepScreenAwakeButton(inline: true)  // Full-width card
 /// DSKeepScreenAwakeButton()              // Compact icon for toolbar
 /// ```
 struct DSKeepScreenAwakeButton: View {

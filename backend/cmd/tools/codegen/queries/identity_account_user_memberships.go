@@ -29,7 +29,7 @@ var accountUserMembershipsColumns = []string{
 
 func buildAccountUserMembershipsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		return []*Query{
 			{
@@ -54,7 +54,7 @@ func buildAccountUserMembershipsQueries(database string) []*Query {
 					Name: "ArchiveUserMemberships",
 					Type: ExecRowsType,
 				},
-				Content: buildUpdateAccountMembershipsQuery(belongsToUserColumn, []string{}),
+				Content: buildUpdateAccountMembershipsQuery(belongsToUserColumn, database, []string{}),
 			},
 			{
 				Annotation: QueryAnnotation{
@@ -137,7 +137,7 @@ WHERE %s.%s IS NULL
 	AND %s.%s = sqlc.arg(%s)
 	AND %s.%s = sqlc.arg(%s);`,
 					accountUserMembershipsTableName,
-					archivedAtColumn, currentTimeExpression,
+					archivedAtColumn, currentTimeExpression(database),
 					defaultAccountColumn,
 					accountUserMembershipsTableName, archivedAtColumn,
 					accountUserMembershipsTableName, belongsToAccountColumn, belongsToAccountColumn,

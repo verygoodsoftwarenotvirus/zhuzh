@@ -9,23 +9,23 @@
 	},
 	"observability": {
 		"profiling": {
-			"serviceName": "dinner_done_better_mcp_server"
+			"serviceName": "zhuzh_mcp_server"
 		},
 		"logging": {
-			"serviceName": "dinner_done_better_mcp_server",
+			"serviceName": "zhuzh_mcp_server",
 			"level": "info",
 			"provider": "slog"
 		},
 		"metrics": {
-			"serviceName": "dinner_done_better_mcp_server"
+			"serviceName": "zhuzh_mcp_server"
 		},
 		"tracing": {
-			"service_name": "dinner_done_better_mcp_server"
+			"service_name": "zhuzh_mcp_server"
 		}
 	},
 	"routing": {
 		"chiConfig": {
-			"serviceName": "dinner_done_better_mcp_server",
+			"serviceName": "zhuzh_mcp_server",
 			"enableCORSForLocalhost": true
 		},
 		"provider": "chi"

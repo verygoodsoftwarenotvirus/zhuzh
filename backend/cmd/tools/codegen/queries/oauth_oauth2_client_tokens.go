@@ -43,7 +43,7 @@ var oauth2ClientTokensColumns = []string{
 
 func buildOAuth2ClientTokensQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		return []*Query{
 			{

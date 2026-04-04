@@ -407,7 +407,7 @@ If adding:
 
 **Handlers**: Implement in `cmd/services/admin/` — HTTP handlers that call gRPC or repository.
 
-**Reference**: Settings, valid_ingredients, waitlists in routes.go
+**Reference**: Settings, waitlists, issuereports in routes.go
 
 ---
 

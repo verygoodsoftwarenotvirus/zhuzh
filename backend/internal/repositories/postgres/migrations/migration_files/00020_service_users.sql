@@ -40,7 +40,7 @@ GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO
   queue_test;
 
 -- Ensure future tables/sequences created by the migration user also get grants.
--- This covers tables created by later migrations (e.g. meal planning).
+-- This covers tables created by later migrations (e.g. payments, comments).
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
   GRANT ALL PRIVILEGES ON TABLES TO
     api_db_user,
