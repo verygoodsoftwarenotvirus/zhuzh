@@ -6,13 +6,13 @@ This is one of the most critical services in the backend: if it stops running, e
 
 ## Topics Consumed
 
-| Topic                          | Purpose                                                                    |
-|--------------------------------|----------------------------------------------------------------------------|
+| Topic                          | Purpose                                                                     |
+|--------------------------------|-----------------------------------------------------------------------------|
 | **Data Changes**               | Audit events emitted when data changes (user signup, comment created, etc.) |
-| **Outbound Emails**            | Email send requests (verification, password reset, notifications, etc.)    |
-| **Search Index Requests**      | Requests to index or remove records from the text search index             |
-| **Webhook Execution Requests** | Outbound webhook deliveries to customer-configured URLs                    |
-| **User Data Aggregation**      | GDPR/CCPA data export requests                                             |
+| **Outbound Emails**            | Email send requests (verification, password reset, notifications, etc.)     |
+| **Search Index Requests**      | Requests to index or remove records from the text search index              |
+| **Webhook Execution Requests** | Outbound webhook deliveries to customer-configured URLs                     |
+| **User Data Aggregation**      | GDPR/CCPA data export requests                                              |
 
 ## Event Handlers
 

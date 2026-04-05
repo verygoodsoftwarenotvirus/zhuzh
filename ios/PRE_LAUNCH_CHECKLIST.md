@@ -369,7 +369,7 @@ Document what data is collected:
 | Item                       | Location/Command                                                |
 |----------------------------|-----------------------------------------------------------------|
 | Team ID                    | Apple Developer Portal → Membership                             |
-| Bundle ID                  | `com.zhuzh.ios`                                      |
+| Bundle ID                  | `com.zhuzh.ios`                                                 |
 | Run unit tests             | `cd ios && make unit_test`                                      |
 | Run UI tests               | `cd ios && make ui_test`                                        |
 | Regenerate backend configs | `cd backend && make configs`                                    |

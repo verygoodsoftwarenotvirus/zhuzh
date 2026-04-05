@@ -20,15 +20,15 @@ Uses the same flow as the mobile and web apps:
 
 ## Environment Variables
 
-| Variable                  | Description                                                                                      |
-|---------------------------|--------------------------------------------------------------------------------------------------|
+| Variable                  | Description                                                                             |
+|---------------------------|-----------------------------------------------------------------------------------------|
 | `K6_GRPC_TARGET`          | gRPC API address, e.g. `api.example.com:443` (default: production)                      |
 | `K6_HTTP_BASE`            | HTTP API base URL for OAuth2, e.g. `https://http-api.example.com` (default: production) |
-| `K6_GRPC_PLAINTEXT`       | Set to `true` for local dev (no TLS)                                                             |
-| `K6_OAUTH2_CLIENT_ID`     | Load test OAuth2 client ID                                                                       |
-| `K6_OAUTH2_CLIENT_SECRET` | Load test OAuth2 client secret                                                                   |
-| `K6_LOADTEST_USERNAME`    | Load test user username                                                                          |
-| `K6_LOADTEST_PASSWORD`    | Load test user password                                                                          |
+| `K6_GRPC_PLAINTEXT`       | Set to `true` for local dev (no TLS)                                                    |
+| `K6_OAUTH2_CLIENT_ID`     | Load test OAuth2 client ID                                                              |
+| `K6_OAUTH2_CLIENT_SECRET` | Load test OAuth2 client secret                                                          |
+| `K6_LOADTEST_USERNAME`    | Load test user username                                                                 |
+| `K6_LOADTEST_PASSWORD`    | Load test user password                                                                 |
 
 ## Running
 

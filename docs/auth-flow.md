@@ -188,21 +188,21 @@ Tokens issued before session management (without a `sid` claim) continue to work
 
 ## Key File Reference
 
-| Area                                          | Path                                                                   |
-|-----------------------------------------------|------------------------------------------------------------------------|
-| Auth manager (login, passkey, token exchange) | `internal/authentication/manager.go`                                   |
-| JWT issuance/parsing                          | `internal/authentication/tokens/jwt/jwt.go`                            |
-| WebAuthn service                              | `internal/authentication/webauthn/service.go`                          |
-| gRPC auth service                             | `internal/services/auth/grpc/auth.go`                                  |
-| Auth interceptor                              | `internal/services/auth/grpc/interceptors/authn_interceptor.go`        |
-| OAuth2 server                                 | `internal/services/auth/handlers/authentication/oauth2.go`             |
-| OAuth2 token store                            | `internal/services/auth/handlers/authentication/oauth2_token_store.go` |
-| Passkey HTTP handlers                         | `internal/services/auth/handlers/passkey/handlers.go`                  |
-| Web app auth middleware                       | `internal/platform/webappauth/middleware.go`                           |
-| Client builder (OAuth2 + JWT)                 | `internal/platform/webappauth/client_builder.go`                       |
-| gRPC client (OAuth2, Bearer)                  | `pkg/client/client.go`                                                 |
-| Session domain model + interfaces             | `internal/domain/auth/user_session.go`                                 |
-| Session DB repository                         | `internal/repositories/postgres/auth/user_sessions.go`                 |
+| Area                                          | Path                                                                                |
+|-----------------------------------------------|-------------------------------------------------------------------------------------|
+| Auth manager (login, passkey, token exchange) | `internal/authentication/manager.go`                                                |
+| JWT issuance/parsing                          | `internal/authentication/tokens/jwt/jwt.go`                                         |
+| WebAuthn service                              | `internal/authentication/webauthn/service.go`                                       |
+| gRPC auth service                             | `internal/services/auth/grpc/auth.go`                                               |
+| Auth interceptor                              | `internal/services/auth/grpc/interceptors/authn_interceptor.go`                     |
+| OAuth2 server                                 | `internal/services/auth/handlers/authentication/oauth2.go`                          |
+| OAuth2 token store                            | `internal/services/auth/handlers/authentication/oauth2_token_store.go`              |
+| Passkey HTTP handlers                         | `internal/services/auth/handlers/passkey/handlers.go`                               |
+| Web app auth middleware                       | `internal/platform/webappauth/middleware.go`                                        |
+| Client builder (OAuth2 + JWT)                 | `internal/platform/webappauth/client_builder.go`                                    |
+| gRPC client (OAuth2, Bearer)                  | `pkg/client/client.go`                                                              |
+| Session domain model + interfaces             | `internal/domain/auth/user_session.go`                                              |
+| Session DB repository                         | `internal/repositories/postgres/auth/user_sessions.go`                              |
 | Session DB migration                          | `internal/repositories/postgres/migrations/migration_files/00023_user_sessions.sql` |
 
 ## Flow Diagram

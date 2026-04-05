@@ -70,7 +70,7 @@ The client fetches server metadata:
 
 The client registers itself (RFC 7591):
 
-```
+```bash
 POST /register
 Content-Type: application/json
 
@@ -86,16 +86,16 @@ Returns a `client_id` and `client_secret`.
 
 The client opens a browser to:
 
-```
+```bash
 GET /authorize?response_type=code&client_id=...&redirect_uri=...&code_challenge=...&code_challenge_method=S256&state=...
 ```
 
 A login form is rendered. Enter your:
 
-| Field | Description |
-|-------|-------------|
-| **Username** | Your admin username |
-| **Password** | Your admin password |
+| Field         | Description                |
+|---------------|----------------------------|
+| **Username**  | Your admin username        |
+| **Password**  | Your admin password        |
 | **TOTP Code** | Your 2FA code (if enabled) |
 
 On success, the server redirects back to the client with an authorization code.
@@ -106,7 +106,7 @@ On success, the server redirects back to the client with an authorization code.
 
 The client exchanges the authorization code for tokens:
 
-```
+```bash
 POST /token
 Content-Type: application/x-www-form-urlencoded
 
@@ -128,17 +128,17 @@ Returns:
 
 All tool calls go to `POST /mcp` with the bearer token:
 
-```
+```bash
 Authorization: Bearer <access_token>
 ```
 
 ### Token Lifetimes
 
-| Token | Lifetime |
-|-------|----------|
+| Token              | Lifetime  |
+|--------------------|-----------|
 | Authorization code | 5 minutes |
-| Access token | 24 hours |
-| Refresh token | 7 days |
+| Access token       | 24 hours  |
+| Refresh token      | 7 days    |
 
 Refresh tokens are single-use. Each refresh returns a new access/refresh token pair.
 
@@ -146,11 +146,11 @@ Refresh tokens are single-use. Each refresh returns a new access/refresh token p
 
 The server supports three transport modes (set via `--transport` flag):
 
-| Transport | Description | Use Case |
-|-----------|-------------|----------|
-| `http` (default) | Stateless streamable HTTP | Production, API gateways |
-| `sse` | Server-Sent Events | Long-lived streaming connections |
-| `stdio` | Standard I/O | CLI tools, local piping |
+| Transport        | Description               | Use Case                         |
+|------------------|---------------------------|----------------------------------|
+| `http` (default) | Stateless streamable HTTP | Production, API gateways         |
+| `sse`            | Server-Sent Events        | Long-lived streaming connections |
+| `stdio`          | Standard I/O              | CLI tools, local piping          |
 
 ## Troubleshooting
 
