@@ -255,7 +255,7 @@ func TestQuerier_GetIssueReportsForRecord(T *testing.T) {
 		filter := filtering.DefaultQueryFilter()
 		c := buildInertClientForTest(t)
 
-		actual, err := c.GetIssueReportsForRecord(ctx, "recipes", "", filter)
+		actual, err := c.GetIssueReportsForRecord(ctx, "issue_reports", "", filter)
 		assert.Error(t, err)
 		assert.Nil(t, actual)
 	})

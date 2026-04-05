@@ -30,7 +30,7 @@ var purchasesColumns = []string{
 
 func buildPaymentsPurchasesQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 		insertColumns := filterForInsert(purchasesColumns)
 		fullSelectColumns := applyToEach(purchasesColumns, func(_ int, s string) string {
 			return fullColumnName(purchasesTableName, s)
@@ -86,12 +86,12 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(purchasesTableName, true, true, nil, accountCondition),
+					buildFilterCountSelect(purchasesTableName, database, true, true, nil, accountCondition),
 					buildTotalCountSelect(purchasesTableName, true, nil, accountCondition),
 					purchasesTableName,
 					purchasesTableName, archivedAtColumn,
 					accountCondition,
-					buildFilterConditions(purchasesTableName, true, false, accountCondition),
+					buildFilterConditions(purchasesTableName, database, true, false, accountCondition),
 					buildCursorLimitClause(purchasesTableName),
 				)),
 			},

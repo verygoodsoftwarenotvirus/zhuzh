@@ -26,7 +26,7 @@ var permissionsColumns = []string{
 
 func buildPermissionsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		return []*Query{
 			{
@@ -98,11 +98,11 @@ WHERE %s.%s IS NULL
 					strings.Join(applyToEach(permissionsColumns, func(i int, s string) string {
 						return fmt.Sprintf("%s.%s", permissionsTableName, s)
 					}), ",\n\t"),
-					buildFilterCountSelect(permissionsTableName, true, true, []string{}),
+					buildFilterCountSelect(permissionsTableName, database, true, true, []string{}),
 					buildTotalCountSelect(permissionsTableName, true, []string{}),
 					permissionsTableName,
 					permissionsTableName, archivedAtColumn,
-					buildFilterConditions(permissionsTableName, true, true),
+					buildFilterConditions(permissionsTableName, database, true, true),
 					buildCursorLimitClause(permissionsTableName),
 				)),
 			},
@@ -113,7 +113,7 @@ WHERE %s.%s IS NULL
 				},
 				Content: buildRawQuery((&builq.Builder{}).Addf(`UPDATE %s SET %s = %s WHERE %s IS NULL AND %s = sqlc.arg(%s);`,
 					permissionsTableName,
-					archivedAtColumn, currentTimeExpression,
+					archivedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),

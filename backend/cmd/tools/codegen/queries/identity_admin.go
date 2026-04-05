@@ -6,7 +6,7 @@ import (
 
 func buildAdminQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		return []*Query{
 			{
@@ -21,7 +21,7 @@ func buildAdminQueries(database string) []*Query {
 WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					usersTableName,
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					userAccountStatusColumn, userAccountStatusColumn,
 					userAccountStatusExplanationColumn, userAccountStatusExplanationColumn,
 					archivedAtColumn,
@@ -39,7 +39,7 @@ WHERE %s IS NULL
 WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					usersTableName,
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					requiresPasswordChangeColumn, requiresPasswordChangeColumn,
 					archivedAtColumn,
 					idColumn, idColumn,

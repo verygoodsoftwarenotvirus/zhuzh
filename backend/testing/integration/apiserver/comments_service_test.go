@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func commentsServiceCreateCommentOnRecipe(t *testing.T, recipeID string, c client.Client, content string) *commentsgrpc.Comment {
+func commentsServiceCreateCommentOnIssueReport(t *testing.T, issueReportID string, c client.Client, content string) *commentsgrpc.Comment {
 	t.Helper()
 	ctx := t.Context()
 
@@ -21,8 +21,8 @@ func commentsServiceCreateCommentOnRecipe(t *testing.T, recipeID string, c clien
 	res, err := c.CommentsService().CreateComment(ctx, &commentsgrpc.CreateCommentRequest{
 		Input: &commentsgrpc.CommentCreationRequestInput{
 			Content:      content,
-			TargetType:   "recipes",
-			ReferencedId: recipeID,
+			TargetType:   "issue_reports",
+			ReferencedId: issueReportID,
 		},
 	})
 	require.NoError(t, err)
@@ -45,13 +45,13 @@ func TestCommentsService_CreateComment(T *testing.T) {
 		res, err := testClient.CommentsService().CreateComment(ctx, &commentsgrpc.CreateCommentRequest{
 			Input: &commentsgrpc.CommentCreationRequestInput{
 				Content:      "created via CreateComment",
-				TargetType:   "recipes",
+				TargetType:   "issue_reports",
 				ReferencedId: referencedID,
 			},
 		})
 		require.NoError(t, err)
 		require.NotNil(t, res.Comment)
-		assert.Equal(t, "recipes", res.Comment.TargetType)
+		assert.Equal(t, "issue_reports", res.Comment.TargetType)
 		assert.Equal(t, referencedID, res.Comment.ReferencedId)
 		assert.Equal(t, "created via CreateComment", res.Comment.Content)
 
@@ -69,7 +69,7 @@ func TestCommentsService_CreateComment(T *testing.T) {
 		res, err := c.CommentsService().CreateComment(ctx, &commentsgrpc.CreateCommentRequest{
 			Input: &commentsgrpc.CommentCreationRequestInput{
 				Content:      "test",
-				TargetType:   "recipes",
+				TargetType:   "issue_reports",
 				ReferencedId: nonexistentID,
 			},
 		})
@@ -87,10 +87,10 @@ func TestCommentsService_GetCommentsForReference(T *testing.T) {
 
 		_, testClient := createUserAndClientForTest(t)
 		referencedID := nonexistentID
-		_ = commentsServiceCreateCommentOnRecipe(t, referencedID, testClient, "")
+		_ = commentsServiceCreateCommentOnIssueReport(t, referencedID, testClient, "")
 
 		listRes, err := testClient.CommentsService().GetCommentsForReference(ctx, &commentsgrpc.GetCommentsForReferenceRequest{
-			TargetType:   "recipes",
+			TargetType:   "issue_reports",
 			ReferencedId: referencedID,
 		})
 		require.NoError(t, err)
@@ -104,11 +104,11 @@ func TestCommentsService_GetCommentsForReference(T *testing.T) {
 
 		_, testClient := createUserAndClientForTest(t)
 		referencedID := nonexistentID
-		_ = commentsServiceCreateCommentOnRecipe(t, referencedID, testClient, "")
+		_ = commentsServiceCreateCommentOnIssueReport(t, referencedID, testClient, "")
 
 		c := buildUnauthenticatedGRPCClientForTest(t)
 		listRes, err := c.CommentsService().GetCommentsForReference(ctx, &commentsgrpc.GetCommentsForReferenceRequest{
-			TargetType:   "recipes",
+			TargetType:   "issue_reports",
 			ReferencedId: referencedID,
 		})
 		assert.Error(t, err)
@@ -125,7 +125,7 @@ func TestCommentsService_UpdateComment(T *testing.T) {
 
 		user, testClient := createUserAndClientForTest(t)
 		referencedID := nonexistentID
-		createdComment := commentsServiceCreateCommentOnRecipe(t, referencedID, testClient, "original")
+		createdComment := commentsServiceCreateCommentOnIssueReport(t, referencedID, testClient, "original")
 
 		_, err := testClient.CommentsService().UpdateComment(ctx, &commentsgrpc.UpdateCommentRequest{
 			CommentId: createdComment.Id,
@@ -139,7 +139,7 @@ func TestCommentsService_UpdateComment(T *testing.T) {
 		})
 
 		listRes, err := testClient.CommentsService().GetCommentsForReference(ctx, &commentsgrpc.GetCommentsForReferenceRequest{
-			TargetType:   "recipes",
+			TargetType:   "issue_reports",
 			ReferencedId: referencedID,
 		})
 		require.NoError(t, err)
@@ -161,7 +161,7 @@ func TestCommentsService_ArchiveComment(T *testing.T) {
 
 		user, testClient := createUserAndClientForTest(t)
 		referencedID := nonexistentID
-		createdComment := commentsServiceCreateCommentOnRecipe(t, referencedID, testClient, "")
+		createdComment := commentsServiceCreateCommentOnIssueReport(t, referencedID, testClient, "")
 
 		_, err := testClient.CommentsService().ArchiveComment(ctx, &commentsgrpc.ArchiveCommentRequest{
 			CommentId: createdComment.Id,
@@ -174,7 +174,7 @@ func TestCommentsService_ArchiveComment(T *testing.T) {
 		})
 
 		listRes, err := testClient.CommentsService().GetCommentsForReference(ctx, &commentsgrpc.GetCommentsForReferenceRequest{
-			TargetType:   "recipes",
+			TargetType:   "issue_reports",
 			ReferencedId: referencedID,
 		})
 		require.NoError(t, err)

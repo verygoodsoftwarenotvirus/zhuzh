@@ -1,0 +1,73 @@
+package migrations
+
+import (
+	"context"
+	"database/sql"
+	"embed"
+	"fmt"
+
+	"github.com/verygoodsoftwarenotvirus/platform/v4/database"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/logging"
+
+	"github.com/GuiaBolso/darwin"
+)
+
+var (
+	//go:embed migration_files/*.sql
+	rawMigrations embed.FS
+)
+
+func fetchMigration(name string) string {
+	file, err := rawMigrations.ReadFile(fmt.Sprintf("migration_files/%s.sql", name))
+	if err != nil {
+		panic(err)
+	}
+
+	return string(file)
+}
+
+// Migrator implements database.Migrator for sqlite databases.
+type Migrator struct {
+	logger logging.Logger
+}
+
+var _ database.Migrator = (*Migrator)(nil)
+
+// NewMigrator creates a new sqlite Migrator.
+func NewMigrator(logger logging.Logger) *Migrator {
+	return &Migrator{
+		logger: logging.EnsureLogger(logger),
+	}
+}
+
+// Migrate runs all sqlite migrations on the given database connection.
+func (m *Migrator) Migrate(ctx context.Context, db *sql.DB) error {
+	migrations := []darwin.Migration{
+		{Version: 1, Description: "identity tables", Script: fetchMigration("00001_identity")},
+		{Version: 2, Description: "audit log entries tables", Script: fetchMigration("00002_auditlogentries")},
+		{Version: 3, Description: "auth tables", Script: fetchMigration("00003_auth")},
+		{Version: 4, Description: "oauth tables", Script: fetchMigration("00004_oauth")},
+		{Version: 5, Description: "settings tables", Script: fetchMigration("00005_settings")},
+		{Version: 6, Description: "user notifications table", Script: fetchMigration("00006_notifications")},
+		{Version: 7, Description: "webhooks tables", Script: fetchMigration("00007_webhooks")},
+		{Version: 8, Description: "waitlist tables", Script: fetchMigration("00008_waitlists")},
+		{Version: 9, Description: "issue reports table", Script: fetchMigration("00009_issue_reports")},
+		{Version: 10, Description: "uploaded media table", Script: fetchMigration("00010_uploaded_media")},
+		{Version: 11, Description: "payments tables", Script: fetchMigration("00011_payments")},
+		{Version: 12, Description: "comments table", Script: fetchMigration("00012_comments")},
+		{Version: 13, Description: "data privacy tables", Script: fetchMigration("00013_dataprivacy")},
+		{Version: 14, Description: "queue test messages tables", Script: fetchMigration("00014_internalops")},
+		{Version: 15, Description: "user device tokens table", Script: fetchMigration("00015_user_device_tokens")},
+		{Version: 16, Description: "webauthn credentials table", Script: fetchMigration("00016_webauthn_credentials")},
+		{Version: 17, Description: "webauthn sessions table", Script: fetchMigration("00017_webauthn_sessions")},
+		{Version: 18, Description: "user sessions table", Script: fetchMigration("00018_user_sessions")},
+		{Version: 19, Description: "rbac tables", Script: fetchMigration("00019_rbac")},
+	}
+
+	if err := darwin.New(darwin.NewGenericDriver(db, darwin.SqliteDialect{}), migrations, nil).Migrate(); err != nil {
+		return fmt.Errorf("running migrations: %w", err)
+	}
+
+	m.logger.Info("migrations completed successfully")
+	return nil
+}

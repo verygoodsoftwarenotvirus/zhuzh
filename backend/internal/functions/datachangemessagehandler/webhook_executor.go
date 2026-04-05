@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/branding"
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/webhooks"
 
 	"github.com/verygoodsoftwarenotvirus/platform/v4/encoding"
@@ -111,7 +112,7 @@ func (a *AsyncDataChangeMessageHandler) handleWebhookExecutionRequest(
 
 	digest := hmac.New(sha256.New, decryptedKey)
 	digest.Write(payloadBody)
-	req.Header.Set("X-Dinner-Done-Better-Signature", hex.EncodeToString(digest.Sum(nil)))
+	req.Header.Set(fmt.Sprintf("X-%s-Signature", branding.CompanyName), hex.EncodeToString(digest.Sum(nil)))
 
 	res, err := httpclient.ProvideHTTPClient(&httpclient.Config{EnableTracing: true}).Do(req) //nolint:gosec // G704: webhook URL is admin-configured; webhooks intentionally deliver to external URLs
 	if err != nil {

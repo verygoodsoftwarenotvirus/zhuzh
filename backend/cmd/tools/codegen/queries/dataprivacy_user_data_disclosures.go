@@ -34,7 +34,7 @@ var (
 
 func buildUserDataDisclosuresQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 		insertColumns := filterForInsert(userDataDisclosuresColumns, statusColumn, reportIDColumn, completedAtColumn)
 		fullSelectColumns := applyToEach(userDataDisclosuresColumns, func(_ int, s string) string {
 			return fullColumnName(userDataDisclosuresTableName, s)
@@ -91,6 +91,7 @@ WHERE %s.%s IS NULL
 					strings.Join(fullSelectColumns, ",\n\t"),
 					buildFilterCountSelect(
 						userDataDisclosuresTableName,
+						database,
 						false,
 						true,
 						nil,
@@ -105,7 +106,7 @@ WHERE %s.%s IS NULL
 					userDataDisclosuresTableName,
 					userDataDisclosuresTableName, archivedAtColumn,
 					userDataDisclosuresTableName, belongsToUserColumn,
-					buildFilterConditions(userDataDisclosuresTableName, false, false),
+					buildFilterConditions(userDataDisclosuresTableName, database, false, false),
 					buildCursorLimitClause(userDataDisclosuresTableName),
 				)),
 			},
@@ -124,8 +125,8 @@ WHERE %s.%s = sqlc.arg(%s)
 					userDataDisclosuresTableName,
 					statusColumn,
 					reportIDColumn, reportIDColumn,
-					completedAtColumn, currentTimeExpression,
-					lastUpdatedAtColumn, currentTimeExpression,
+					completedAtColumn, currentTimeExpression(database),
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					userDataDisclosuresTableName, idColumn, idColumn,
 					userDataDisclosuresTableName, archivedAtColumn,
 				)),
@@ -142,7 +143,7 @@ WHERE %s.%s = sqlc.arg(%s)
 	AND %s.%s IS NULL;`,
 					userDataDisclosuresTableName,
 					statusColumn,
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					userDataDisclosuresTableName, idColumn, idColumn,
 					userDataDisclosuresTableName, archivedAtColumn,
 				)),
@@ -159,7 +160,7 @@ WHERE %s.%s = sqlc.arg(%s)
 	AND %s.%s IS NULL;`,
 					userDataDisclosuresTableName,
 					statusColumn,
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					userDataDisclosuresTableName, idColumn, idColumn,
 					userDataDisclosuresTableName, archivedAtColumn,
 				)),
@@ -172,7 +173,7 @@ WHERE %s.%s = sqlc.arg(%s)
 				Content: buildRawQuery((&builq.Builder{}).Addf(`UPDATE %s SET %s = %s
 WHERE %s.%s = sqlc.arg(%s)
 	AND %s.%s IS NULL;`,
-					userDataDisclosuresTableName, archivedAtColumn, currentTimeExpression,
+					userDataDisclosuresTableName, archivedAtColumn, currentTimeExpression(database),
 					userDataDisclosuresTableName, idColumn, idColumn,
 					userDataDisclosuresTableName, archivedAtColumn,
 				)),

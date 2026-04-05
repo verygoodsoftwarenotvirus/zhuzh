@@ -7,3 +7,4 @@ set -euo pipefail
 PACKAGE_PREFIX="${1:-github.com/verygoodsoftwarenotvirus/zhuzh/backend}"
 
 go run "${PACKAGE_PREFIX}/cmd/tools/codegen/queries"
+go run "${PACKAGE_PREFIX}/cmd/tools/codegen/queries" --database sqlite

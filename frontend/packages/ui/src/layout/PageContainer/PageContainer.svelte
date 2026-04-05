@@ -3,7 +3,7 @@
 
   interface Props {
     narrow?: boolean;
-    /** Use for wide content (e.g. recipe editor): starts ~15% from left, max 70vw width */
+    /** Use for wide content (e.g. data table): starts ~15% from left, max 70vw width */
     wide?: boolean;
     class?: string;
     children?: Snippet;

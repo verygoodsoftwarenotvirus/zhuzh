@@ -28,7 +28,7 @@ var userRoleHierarchyColumns = []string{
 
 func buildUserRoleHierarchyQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		return []*Query{
 			{
@@ -74,7 +74,7 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s)
 	AND %s = sqlc.arg(%s);`,
 					userRoleHierarchyTableName,
-					archivedAtColumn, currentTimeExpression,
+					archivedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					parentRoleIDColumn, parentRoleIDColumn,
 					childRoleIDColumn, childRoleIDColumn,

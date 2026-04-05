@@ -1,0 +1,191 @@
+package payments
+
+import (
+	"context"
+	"time"
+
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/audit"
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/payments"
+	paymentskeys "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/payments/keys"
+	generated "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/sqlite/payments/generated"
+
+	"github.com/verygoodsoftwarenotvirus/platform/v4/database/filtering"
+	platformerrors "github.com/verygoodsoftwarenotvirus/platform/v4/errors"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/identifiers"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability"
+	"github.com/verygoodsoftwarenotvirus/platform/v4/observability/tracing"
+)
+
+const (
+	resourceTypePaymentTransactions = "payment_transactions"
+)
+
+func parseTime(s string) time.Time {
+	t, err := time.Parse(time.RFC3339Nano, s)
+	if err != nil {
+		return time.Time{}
+	}
+	return t
+}
+
+func parseTimePtr(s *string) *time.Time {
+	if s == nil {
+		return nil
+	}
+	t := parseTime(*s)
+	return &t
+}
+
+func timePtrToStringPtr(t *time.Time) *string {
+	if t == nil {
+		return nil
+	}
+	s := t.Format(time.RFC3339Nano)
+	return &s
+}
+
+func int64PtrFromUint8Ptr(v *uint8) any {
+	if v == nil {
+		return nil
+	}
+	i := int64(*v)
+	return i
+}
+
+func int64PtrFromInt32Ptr(v *int32) *int64 {
+	if v == nil {
+		return nil
+	}
+	i := int64(*v)
+	return &i
+}
+
+func int32PtrFromInt64Ptr(v *int64) *int32 {
+	if v == nil {
+		return nil
+	}
+	i := int32(*v)
+	return &i
+}
+
+func stringPtrFromString(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func stringFromStringPtr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func (r *repository) CreatePaymentTransaction(ctx context.Context, input *payments.PaymentTransactionDatabaseCreationInput) (*payments.PaymentTransaction, error) {
+	ctx, span := r.tracer.StartSpan(ctx)
+	defer span.End()
+
+	if input == nil {
+		return nil, platformerrors.ErrNilInputProvided
+	}
+
+	logger := r.logger.Clone()
+	logger = logger.WithValue(paymentskeys.PaymentTransactionIDKey, input.ID)
+	tracing.AttachToSpan(span, paymentskeys.PaymentTransactionIDKey, input.ID)
+
+	arg := &generated.CreatePaymentTransactionParams{
+		ID:                    input.ID,
+		BelongsToAccount:      input.BelongsToAccount,
+		SubscriptionID:        input.SubscriptionID,
+		PurchaseID:            input.PurchaseID,
+		ExternalTransactionID: input.ExternalTransactionID,
+		AmountCents:           int64(input.AmountCents),
+		Currency:              input.Currency,
+		Status:                input.Status,
+	}
+
+	if err := r.generatedQuerier.CreatePaymentTransaction(ctx, r.writeDB, arg); err != nil {
+		return nil, observability.PrepareAndLogError(err, logger, span, "creating payment transaction")
+	}
+
+	if _, err := r.auditLogEntryRepo.CreateAuditLogEntry(ctx, r.writeDB, &audit.AuditLogEntryDatabaseCreationInput{
+		BelongsToAccount: &input.BelongsToAccount,
+		ID:               identifiers.New(),
+		ResourceType:     resourceTypePaymentTransactions,
+		RelevantID:       input.ID,
+		EventType:        audit.AuditLogEventTypeCreated,
+	}); err != nil {
+		return nil, observability.PrepareError(err, span, "creating audit log entry")
+	}
+
+	return &payments.PaymentTransaction{
+		ID:                    input.ID,
+		BelongsToAccount:      input.BelongsToAccount,
+		SubscriptionID:        input.SubscriptionID,
+		PurchaseID:            input.PurchaseID,
+		ExternalTransactionID: input.ExternalTransactionID,
+		AmountCents:           input.AmountCents,
+		Currency:              input.Currency,
+		Status:                input.Status,
+		CreatedAt:             time.Now().UTC(),
+	}, nil
+}
+
+func (r *repository) GetPaymentTransactionsForAccount(ctx context.Context, accountID string, filter *filtering.QueryFilter) (*filtering.QueryFilteredResult[payments.PaymentTransaction], error) {
+	ctx, span := r.tracer.StartSpan(ctx)
+	defer span.End()
+
+	if accountID == "" {
+		return nil, platformerrors.ErrInvalidIDProvided
+	}
+
+	logger := r.logger.Clone()
+	if filter == nil {
+		filter = filtering.DefaultQueryFilter()
+	}
+	logger = filter.AttachToLogger(logger)
+	tracing.AttachQueryFilterToSpan(span, filter)
+
+	params := &generated.GetPaymentTransactionsForAccountParams{
+		BelongsToAccount: accountID,
+		CreatedAfter:     timePtrToStringPtr(filter.CreatedAfter),
+		CreatedBefore:    timePtrToStringPtr(filter.CreatedBefore),
+		Cursor:           filter.Cursor,
+		ResultLimit:      int64PtrFromUint8Ptr(filter.MaxResponseSize),
+	}
+
+	results, err := r.generatedQuerier.GetPaymentTransactionsForAccount(ctx, r.readDB, params)
+	if err != nil {
+		return nil, observability.PrepareAndLogError(err, logger, span, "fetching payment transactions for account")
+	}
+
+	return convertPaymentTransactionsResult(results, filter), nil
+}
+
+func convertPaymentTransactionsResult(rows []*generated.GetPaymentTransactionsForAccountRow, filter *filtering.QueryFilter) *filtering.QueryFilteredResult[payments.PaymentTransaction] {
+	data := make([]*payments.PaymentTransaction, 0, len(rows))
+	var filteredCount, totalCount uint64
+	for _, row := range rows {
+		data = append(data, &payments.PaymentTransaction{
+			ID:                    row.ID,
+			BelongsToAccount:      row.BelongsToAccount,
+			SubscriptionID:        row.SubscriptionID,
+			PurchaseID:            row.PurchaseID,
+			ExternalTransactionID: row.ExternalTransactionID,
+			AmountCents:           int32(row.AmountCents),
+			Currency:              row.Currency,
+			Status:                row.Status,
+			CreatedAt:             parseTime(row.CreatedAt),
+		})
+		filteredCount = uint64(row.FilteredCount)
+		totalCount = uint64(row.TotalCount)
+	}
+	return filtering.NewQueryFilteredResult(
+		data,
+		filteredCount,
+		totalCount,
+		func(p *payments.PaymentTransaction) string { return p.ID },
+		filter,
+	)
+}

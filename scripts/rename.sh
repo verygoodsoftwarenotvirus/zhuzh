@@ -220,7 +220,7 @@ replace_in_files \
   "${NEW_SCREAMING}" \
   "Screaming snake (env vars)"
 
-# 4. Human-readable branding ("Dinner Done Better")
+# 4. Human-readable name
 replace_in_files \
   "${OLD_COMPANY_NAME}" \
   "${NEW_HUMAN}" \

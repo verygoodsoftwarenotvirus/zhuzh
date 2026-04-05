@@ -1,8 +1,9 @@
 ---
 on:
-  pull_request:
-    paths:
-      - backend/deploy/environments/prod/terraform/*.tf
+  gollum: # NOTE: re-enable when you've set up Terraform creds
+#  pull_request:
+#    paths:
+#      - backend/deploy/environments/prod/terraform/*.tf
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

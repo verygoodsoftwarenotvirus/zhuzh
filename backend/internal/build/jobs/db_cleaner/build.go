@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/config"
-	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/internalops"
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories"
 	dbcleaner "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/services/oauth/workers/db_cleaner"
 
 	databasecfg "github.com/verygoodsoftwarenotvirus/platform/v4/database/config"
@@ -35,7 +35,7 @@ func BuildInjector(
 	metricscfg.RegisterMetricsProvider(i)
 	databasecfg.RegisterClientConfig(i)
 	postgres.RegisterDatabaseClient(i)
-	internalops.RegisterInternalOpsRepository(i)
+	repositories.RegisterRepositories(i, cfg.Database.Provider)
 	dbcleaner.RegisterDBCleaner(i)
 
 	return i

@@ -44,7 +44,7 @@ var accountsColumns = []string{
 
 func buildAccountsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		insertColumns := filterForInsert(accountsColumns)
 
@@ -78,9 +78,9 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					accountsTableName,
 					lastUpdatedAtColumn,
-					currentTimeExpression,
+					currentTimeExpression(database),
 					archivedAtColumn,
-					currentTimeExpression,
+					currentTimeExpression(database),
 					archivedAtColumn,
 					belongsToUserColumn,
 					belongsToUserColumn,
@@ -176,13 +176,13 @@ WHERE %s.%s IS NULL
 					strings.Join(applyToEach(accountsColumns, func(_ int, s string) string {
 						return fmt.Sprintf("%s.%s", accountsTableName, s)
 					}), ",\n\t"),
-					buildFilterCountSelect(accountsTableName, true, true, nil),
+					buildFilterCountSelect(accountsTableName, database, true, true, nil),
 					buildTotalCountSelect(accountsTableName, true, []string{}, fmt.Sprintf("%s.%s = sqlc.arg(%s)", accountUserMembershipsTableName, belongsToUserColumn, belongsToUserColumn)),
 					accountsTableName,
 					accountUserMembershipsTableName, accountUserMembershipsTableName, belongsToAccountColumn, accountsTableName, idColumn,
 					accountsTableName, archivedAtColumn,
 					accountUserMembershipsTableName, archivedAtColumn,
-					buildFilterConditions(accountsTableName, true, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", accountUserMembershipsTableName, belongsToUserColumn, belongsToUserColumn)),
+					buildFilterConditions(accountsTableName, database, true, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", accountUserMembershipsTableName, belongsToUserColumn, belongsToUserColumn)),
 					buildCursorLimitClause(accountsTableName),
 				)),
 			},
@@ -217,7 +217,7 @@ WHERE %s IS NULL
 						",\n\t",
 					),
 					lastUpdatedAtColumn,
-					currentTimeExpression,
+					currentTimeExpression(database),
 					archivedAtColumn,
 					belongsToUserColumn,
 					belongsToUserColumn,
@@ -239,7 +239,7 @@ WHERE %s IS NULL
 WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					accountsTableName,
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),
@@ -257,7 +257,7 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					accountsTableName,
 					webhookHMACSecretColumn, webhookHMACSecretColumn,
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					belongsToUserColumn, belongsToUserColumn,
 					idColumn, idColumn,

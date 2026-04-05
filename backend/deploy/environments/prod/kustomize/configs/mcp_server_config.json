@@ -16,11 +16,11 @@
 				"enableMutexProfile": false,
 				"enableBlockProfile": false
 			},
-			"serviceName": "dinner_done_better_mcp_server",
+			"serviceName": "zhuzh_mcp_server",
 			"provider": "pyroscope"
 		},
 		"logging": {
-			"serviceName": "dinner_done_better_mcp_server",
+			"serviceName": "zhuzh_mcp_server",
 			"level": "info",
 			"otelslog": {
 				"endpointURL": "otel-collector-svc.prod.svc.cluster.local:4317",
@@ -37,7 +37,7 @@
 				"enableRuntimeMetrics": false,
 				"enableHostMetrics": false
 			},
-			"serviceName": "dinner_done_better_mcp_server",
+			"serviceName": "zhuzh_mcp_server",
 			"provider": "otelgrpc"
 		},
 		"tracing": {
@@ -45,14 +45,14 @@
 				"collector_endpoint": "otel-collector-svc.prod.svc.cluster.local:4317",
 				"insecure": true
 			},
-			"service_name": "dinner_done_better_mcp_server",
+			"service_name": "zhuzh_mcp_server",
 			"provider": "otelgrpc",
 			"spanCollectionProbability": 1
 		}
 	},
 	"routing": {
 		"chiConfig": {
-			"serviceName": "dinner_done_better_mcp_server",
+			"serviceName": "zhuzh_mcp_server",
 			"enableCORSForLocalhost": true
 		},
 		"provider": "chi"

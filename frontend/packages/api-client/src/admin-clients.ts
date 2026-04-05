@@ -359,6 +359,5 @@ export function createAdminGrpcClients(config: GrpcClientConfig) {
         request as unknown as Parameters<AnalyticsServiceClient['trackAnonymousEvent']>[0],
         authMetadata(token),
       ),
-
   };
 }

@@ -28,7 +28,7 @@ var userRolePermissionsColumns = []string{
 
 func buildUserRolePermissionsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		return []*Query{
 			{
@@ -76,7 +76,7 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s)
 	AND %s = sqlc.arg(%s);`,
 					userRolePermissionsTableName,
-					archivedAtColumn, currentTimeExpression,
+					archivedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					roleIDColumn, roleIDColumn,
 					permissionIDColumn, permissionIDColumn,

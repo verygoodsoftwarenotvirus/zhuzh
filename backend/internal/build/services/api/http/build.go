@@ -9,10 +9,6 @@ import (
 	identitymgr "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/identity/manager"
 	paymentsmanager "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/payments/manager"
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories"
-	auditrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/auditlogentries"
-	identityrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/identity"
-	oauthrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/oauth"
-	paymentsrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/payments"
 	authservice "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/services/auth/handlers/authentication"
 	paymentsadapters "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/services/payments/adapters"
 	paymentshttp "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/services/payments/http"
@@ -74,10 +70,7 @@ func BuildInjector(
 	authcfg.RegisterConfigs(i)
 
 	// repos
-	auditrepo.RegisterAuditLogRepository(i)
-	identityrepo.RegisterIdentityRepository(i)
-	oauthrepo.RegisterOAuthRepository(i)
-	paymentsrepo.RegisterPaymentsRepository(i)
+	repositories.RegisterRepositories(i, cfg.Database.Provider)
 
 	// managers
 	identitymgr.RegisterIdentityDataManager(i)

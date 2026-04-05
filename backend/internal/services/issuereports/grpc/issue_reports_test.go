@@ -336,10 +336,10 @@ func TestServiceImpl_GetIssueReportsForTable(t *testing.T) {
 			},
 		}
 
-		mockRepo.On(reflection.GetMethodName(mockRepo.GetIssueReportsForTable), testutils.ContextMatcher, "recipes", mock.AnythingOfType("*filtering.QueryFilter")).Return(fakeIssueReports, nil)
+		mockRepo.On(reflection.GetMethodName(mockRepo.GetIssueReportsForTable), testutils.ContextMatcher, "issue_reports", mock.AnythingOfType("*filtering.QueryFilter")).Return(fakeIssueReports, nil)
 
 		request := &issuereportssvc.GetIssueReportsForTableRequest{
-			TableName: "recipes",
+			TableName: "issue_reports",
 			Filter:    &grpcfiltering.QueryFilter{},
 		}
 
@@ -359,7 +359,7 @@ func TestServiceImpl_GetIssueReportsForTable(t *testing.T) {
 		service := buildTestServiceWithSessionError(t)
 
 		request := &issuereportssvc.GetIssueReportsForTableRequest{
-			TableName: "recipes",
+			TableName: "issue_reports",
 			Filter:    &grpcfiltering.QueryFilter{},
 		}
 
@@ -390,10 +390,10 @@ func TestServiceImpl_GetIssueReportsForRecord(t *testing.T) {
 			},
 		}
 
-		mockRepo.On(reflection.GetMethodName(mockRepo.GetIssueReportsForRecord), testutils.ContextMatcher, "recipes", "some-record-id", mock.AnythingOfType("*filtering.QueryFilter")).Return(fakeIssueReports, nil)
+		mockRepo.On(reflection.GetMethodName(mockRepo.GetIssueReportsForRecord), testutils.ContextMatcher, "issue_reports", "some-record-id", mock.AnythingOfType("*filtering.QueryFilter")).Return(fakeIssueReports, nil)
 
 		request := &issuereportssvc.GetIssueReportsForRecordRequest{
-			TableName: "recipes",
+			TableName: "issue_reports",
 			RecordId:  "some-record-id",
 			Filter:    &grpcfiltering.QueryFilter{},
 		}
@@ -414,7 +414,7 @@ func TestServiceImpl_GetIssueReportsForRecord(t *testing.T) {
 		service := buildTestServiceWithSessionError(t)
 
 		request := &issuereportssvc.GetIssueReportsForRecordRequest{
-			TableName: "recipes",
+			TableName: "issue_reports",
 			RecordId:  "some-record-id",
 			Filter:    &grpcfiltering.QueryFilter{},
 		}

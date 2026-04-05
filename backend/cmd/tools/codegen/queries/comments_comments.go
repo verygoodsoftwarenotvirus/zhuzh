@@ -29,7 +29,7 @@ var commentsColumns = []string{
 
 func buildCommentsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		insertColumns := filterForInsert(commentsColumns)
 
@@ -42,7 +42,7 @@ func buildCommentsQueries(database string) []*Query {
 				Content: buildRawQuery((&builq.Builder{}).Addf(`UPDATE %s SET %s = %s WHERE %s IS NULL AND %s = sqlc.arg(%s);`,
 					commentsTableName,
 					archivedAtColumn,
-					currentTimeExpression,
+					currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn,
 					idColumn,
@@ -58,7 +58,7 @@ func buildCommentsQueries(database string) []*Query {
 	AND %s = sqlc.arg(referenced_id);`,
 					commentsTableName,
 					archivedAtColumn,
-					currentTimeExpression,
+					currentTimeExpression(database),
 					archivedAtColumn,
 					"target_type",
 					"referenced_id",
@@ -120,7 +120,7 @@ WHERE %s.%s IS NULL
 					strings.Join(applyToEach(commentsColumns, func(i int, s string) string {
 						return fmt.Sprintf("%s.%s", commentsTableName, s)
 					}), ",\n\t"),
-					buildFilterCountSelect(commentsTableName, true, true, []string{},
+					buildFilterCountSelect(commentsTableName, database, true, true, []string{},
 						fmt.Sprintf("%s.%s = sqlc.arg(target_type)", commentsTableName, "target_type"),
 						fmt.Sprintf("%s.%s = sqlc.arg(referenced_id)", commentsTableName, "referenced_id")),
 					buildTotalCountSelect(commentsTableName, true, []string{},
@@ -130,7 +130,7 @@ WHERE %s.%s IS NULL
 					commentsTableName, archivedAtColumn,
 					commentsTableName, "target_type",
 					commentsTableName, "referenced_id",
-					buildFilterConditions(commentsTableName, true, true,
+					buildFilterConditions(commentsTableName, database, true, true,
 						fmt.Sprintf("%s.%s = sqlc.arg(target_type)", commentsTableName, "target_type"),
 						fmt.Sprintf("%s.%s = sqlc.arg(referenced_id)", commentsTableName, "referenced_id")),
 					buildCursorLimitClause(commentsTableName),
@@ -151,7 +151,7 @@ WHERE %s IS NULL
 					strings.Join(applyToEach(filterForUpdate(commentsColumns, "target_type", "referenced_id", belongsToUserColumn, "parent_comment_id"), func(i int, s string) string {
 						return fmt.Sprintf("%s = sqlc.arg(%s)", s, s)
 					}), ",\n\t"),
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 					belongsToUserColumn, belongsToUserColumn,

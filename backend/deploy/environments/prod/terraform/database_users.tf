@@ -1,10 +1,10 @@
 locals {
-  api_database_username                       = "api_db_user"
-  async_message_handler_database_username     = "async_message_handler"
-  db_cleaner_username                         = "db_cleaner"
-  search_data_index_scheduler_username        = "search_data_index_scheduler"
-  mobile_notification_scheduler_username      = "mobile_notification_scheduler"
-  queue_test_username                         = "queue_test"
+  api_database_username                   = "api_db_user"
+  async_message_handler_database_username = "async_message_handler"
+  db_cleaner_username                     = "db_cleaner"
+  search_data_index_scheduler_username    = "search_data_index_scheduler"
+  mobile_notification_scheduler_username  = "mobile_notification_scheduler"
+  queue_test_username                     = "queue_test"
 }
 
 # api_database_username

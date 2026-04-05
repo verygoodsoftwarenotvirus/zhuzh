@@ -6,13 +6,13 @@ This is one of the most critical services in the backend: if it stops running, e
 
 ## Topics Consumed
 
-| Topic                          | Purpose                                                                    |
-|--------------------------------|----------------------------------------------------------------------------|
-| **Data Changes**               | Audit events emitted when data changes (user signup, recipe created, etc.) |
-| **Outbound Emails**            | Email send requests (verification, password reset, notifications, etc.)    |
-| **Search Index Requests**      | Requests to index or remove records from the text search index             |
-| **Webhook Execution Requests** | Outbound webhook deliveries to customer-configured URLs                    |
-| **User Data Aggregation**      | GDPR/CCPA data export requests                                             |
+| Topic                          | Purpose                                                                     |
+|--------------------------------|-----------------------------------------------------------------------------|
+| **Data Changes**               | Audit events emitted when data changes (user signup, comment created, etc.) |
+| **Outbound Emails**            | Email send requests (verification, password reset, notifications, etc.)     |
+| **Search Index Requests**      | Requests to index or remove records from the text search index              |
+| **Webhook Execution Requests** | Outbound webhook deliveries to customer-configured URLs                     |
+| **User Data Aggregation**      | GDPR/CCPA data export requests                                              |
 
 ## Event Handlers
 
@@ -23,9 +23,9 @@ Consumes audit events from across the system. For each event, it:
 1. **Analytics** — Reports the event to the customer data platform (CDP)
 2. **Webhooks** — If the event type has registered webhooks, publishes `WebhookExecutionRequest` messages
 3. **Outbound notifications** — Publishes to the Outbound Emails topic when users need emails (e.g., verification, password reset)
-4. **Search index** — Publishes `IndexRequest` messages for entities that changed (users, recipes, meals, etc.)
+4. **Search index** — Publishes `IndexRequest` messages for entities that changed (users, etc.)
 
-Event types include user lifecycle (signup, archive, email/username changes), meal planning (recipes, meals, grocery lists), OAuth clients, and more.
+Event types include user lifecycle (signup, archive, email/username changes), OAuth clients, and more.
 
 ### Outbound Emails (`OutboundEmailsEventHandler`)
 
@@ -35,7 +35,6 @@ Sends emails via the configured email provider. Messages contain recipient, subj
 
 Performs the actual search indexing. Dispatches by `IndexType`:
 
-- **Meal planning** — Recipes, meals, valid ingredients, instruments, measurement units, preparations, ingredient states, vessels
 - **Identity** — Users
 
 Index requests can originate from the Data Changes handler (real-time) or from the [search data index scheduler](../../workers/search_data_index_scheduler) cron job (batch backfill).

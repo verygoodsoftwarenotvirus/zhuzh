@@ -4,17 +4,17 @@ Last updated: March 2025
 
 ## 1. Acceptance of Terms
 
-By accessing or using Zhuzh ("the Service"), you agree to be bound by these Terms of Service. If you do not
-agree to these terms, please do not use the Service.
+By accessing or using Zhuzh ("the Service"), you agree to be bound by these Terms of Service. If you do not agree to
+these terms, please do not use the Service.
 
 ## 2. Description of Service
 
-Zhuzh is a meal planning and grocery list application that helps you:
+Zhuzh is a multi-tenant SaaS platform that helps you:
 
-- Create and manage meal plans
-- Generate grocery lists from your meal plans
-- Browse and use recipes
-- Organize your cooking workflow
+- Manage your team accounts and memberships
+- Collaborate with teammates via notifications and comments
+- Control access with fine-grained permissions
+- Integrate with your tools via webhooks
 
 The Service is available through our web application and mobile applications.
 
@@ -49,22 +49,19 @@ We reserve the right to change pricing with reasonable notice.
 
 ## 6. Intellectual Property
 
-The Service, including its design, features, and content (excluding user-generated content), is owned by Dinner Done
-Better and protected by intellectual property laws. You may not copy, modify, or create derivative works without our
-written permission.
+The Service, including its design, features, and content (excluding user-generated content), is owned by Zhuzh and
+protected by intellectual property laws. You may not copy, modify, or create derivative works without our written
+permission.
 
 ## 7. Disclaimers
 
 THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND. WE DISCLAIM ALL WARRANTIES, EXPRESS
 OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
-We do not guarantee that recipes or meal plans will meet your dietary needs or preferences. Always verify ingredients
-and nutritional information for your specific requirements.
-
 ## 8. Limitation of Liability
 
-TO THE MAXIMUM EXTENT PERMITTED BY LAW, DINNER DONE BETTER SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
-CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES.
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, ZHUZH SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL,
+OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES.
 
 ## 9. Termination
 

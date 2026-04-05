@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"time"
 
 	apiserver "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/build/services/api"
@@ -13,9 +14,8 @@ import (
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/notifications"
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/oauth"
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/localdev"
-	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/auditlogentries"
-	identityrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/identity"
-	notificationsrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/notifications"
+	pgnotifications "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/notifications"
+	sqlitenotifications "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/sqlite/notifications"
 
 	"github.com/verygoodsoftwarenotvirus/platform/v4/database"
 	databasecfg "github.com/verygoodsoftwarenotvirus/platform/v4/database/config"
@@ -68,6 +68,12 @@ func init() {
 		log.Fatal(err)
 	}
 
+	// Select database provider from environment variable.
+	if dbProvider := os.Getenv("ZHUZH_INTEGRATION_TEST_DB"); dbProvider != "" {
+		cfg.Database.Provider = dbProvider
+	}
+	provider := cfg.Database.Provider
+
 	// Use random ports to avoid conflicts with other running instances
 	httpPort, err := getFreePort()
 	if err != nil {
@@ -101,10 +107,17 @@ func init() {
 	dbConnStr = dbCfg.ReadConnection.String()
 
 	// create premade admin user
-	auditLogRepo := auditlogentries.ProvideAuditLogRepository(pillars.Logger, pillars.TracerProvider, databaseClient)
-	identityRepo := identityrepo.ProvideIdentityRepository(pillars.Logger, pillars.TracerProvider, auditLogRepo, databaseClient)
-	notifsRepo = notificationsrepo.ProvideNotificationsRepository(nil, nil, auditLogRepo, dbCfg, databaseClient)
-	adminUser, err := localdev.CreatePremadeAdminUser(ctx, pillars.Logger, pillars.TracerProvider, identityRepo, databaseClient, premadeAdminUser)
+	auditLogRepo := localdev.ProvideAuditLogRepository(provider, pillars.Logger, pillars.TracerProvider, databaseClient)
+	identityRepo := localdev.ProvideIdentityRepository(provider, pillars.Logger, pillars.TracerProvider, auditLogRepo, databaseClient)
+
+	switch provider {
+	case databasecfg.ProviderSQLite:
+		notifsRepo = sqlitenotifications.ProvideNotificationsRepository(nil, nil, auditLogRepo, dbCfg, databaseClient)
+	default:
+		notifsRepo = pgnotifications.ProvideNotificationsRepository(nil, nil, auditLogRepo, dbCfg, databaseClient)
+	}
+
+	adminUser, err := localdev.CreatePremadeAdminUser(ctx, pillars.Logger, pillars.TracerProvider, identityRepo, databaseClient, premadeAdminUser, provider)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -115,7 +128,7 @@ func init() {
 		Description:  "integration test client",
 		ClientID:     random.MustGenerateHexEncodedString(ctx, oauth.ClientIDSize),
 		ClientSecret: random.MustGenerateHexEncodedString(ctx, oauth.ClientSecretSize),
-	})
+	}, provider)
 	if err != nil {
 		log.Fatal(err)
 	}

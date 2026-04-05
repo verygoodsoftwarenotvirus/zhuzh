@@ -7,13 +7,13 @@ import PhotosUI
 import SwiftUI
 
 /// Generic media upload view. Use for uploading images to any bucket.
-/// Pass the desired bucket (e.g. .recipes, .meals) for the use case.
+/// Pass the desired bucket (e.g. .avatars, .custom("uploads")) for the use case.
 struct UploadMediaView: View {
   @Environment(AuthenticationManager.self) private var authManager
   @State private var viewModel: MediaUploadViewModel?
   @State private var selectedItem: PhotosPickerItem?
 
-  /// Bucket to upload to (avatars, recipes, meals, or custom)
+  /// Bucket to upload to (avatars or custom)
   var bucket: MediaBucket = .avatars
 
   var body: some View {
@@ -121,18 +121,6 @@ struct UploadMediaView: View {
 
   return NavigationStack {
     UploadMediaView(bucket: .avatars)
-      .environment(authManager)
-  }
-}
-
-#Preview("Recipes bucket") {
-  let authManager = AuthenticationManager()
-  authManager.isAuthenticated = true
-  authManager.username = "Test User"
-  authManager.userID = "user123"
-
-  return NavigationStack {
-    UploadMediaView(bucket: .recipes)
       .environment(authManager)
   }
 }

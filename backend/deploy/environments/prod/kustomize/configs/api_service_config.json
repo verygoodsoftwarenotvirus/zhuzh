@@ -313,14 +313,6 @@
 				"debug": false
 			}
 		},
-		"mealPlanning": {
-			"mediaUploadPrefix": "",
-			"uploads": {
-				"storageConfig": {},
-				"debug": false
-			},
-			"useSearchService": true
-		},
 		"auth": {
 			"tokens": {
 				"provider": "paseto",

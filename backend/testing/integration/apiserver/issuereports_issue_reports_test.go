@@ -207,7 +207,7 @@ func TestIssueReports_ListingForTable(T *testing.T) {
 		_, testClient := createUserAndClientForTest(t)
 
 		// Create some issue reports with specific table names
-		tableName := "recipes"
+		tableName := "issue_reports"
 		for range exampleQuantity {
 			exampleIssueReport := issuereportfakes.BuildFakeIssueReport()
 			exampleIssueReport.RelevantTable = tableName
@@ -246,7 +246,7 @@ func TestIssueReports_ListingForRecord(T *testing.T) {
 		_, testClient := createUserAndClientForTest(t)
 
 		// Create some issue reports with specific table name and record ID
-		tableName := "recipes"
+		tableName := "issue_reports"
 		recordID := "test-record-123"
 		for range exampleQuantity {
 			exampleIssueReport := issuereportfakes.BuildFakeIssueReport()

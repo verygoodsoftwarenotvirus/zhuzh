@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// A card-style row with an icon in a colored circle, text, and optional chevron.
-/// Use for navigation links (e.g. task summary, grocery list) inside NavigationLink or Button.
+/// Use for navigation links (e.g. account summary, notification list) inside NavigationLink or Button.
 ///
 /// Usage:
 /// ```swift
@@ -17,7 +17,7 @@ import SwiftUI
 /// }
 /// .buttonStyle(.plain)
 ///
-/// DSInfoRow(icon: "cart.fill", text: "Grocery List (2 needed)", color: .blue, showChevron: false)
+/// DSInfoRow(icon: "bell.fill", text: "Notifications (2 unread)", color: .blue, showChevron: false)
 /// ```
 struct DSInfoRow: View {
   let icon: String
@@ -67,9 +67,9 @@ struct DSInfoRow: View {
   VStack(spacing: DSTheme.Spacing.md) {
     DSInfoRow(icon: "checklist", text: "3 tasks remaining", color: DSTheme.Colors.warning)
     DSInfoRow(
-      icon: "cart.fill", text: "Grocery List (2 ingredients needed)", color: DSTheme.Colors.primary)
+      icon: "bell.fill", text: "Notifications (2 unread)", color: DSTheme.Colors.primary)
     DSInfoRow(
-      icon: "checkmark.circle", text: "All ingredients acquired", color: DSTheme.Colors.success)
+      icon: "checkmark.circle", text: "All items confirmed", color: DSTheme.Colors.success)
     DSInfoRow(
       icon: "info.circle", text: "Without chevron", color: DSTheme.Colors.info, showChevron: false)
   }

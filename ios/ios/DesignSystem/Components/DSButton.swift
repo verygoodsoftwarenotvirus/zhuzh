@@ -229,7 +229,7 @@ struct DSButton: View {
 ///
 /// Usage:
 /// ```swift
-/// DSButtonLink("View Recipes", icon: "book.closed", destination: RecipeListView())
+/// DSButtonLink("View Notifications", icon: "bell", destination: NotificationsView())
 /// DSButtonLink("Settings", style: .secondary, destination: SettingsView())
 /// ```
 struct DSButtonLink<Destination: View>: View {

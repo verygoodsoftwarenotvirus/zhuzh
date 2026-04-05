@@ -29,7 +29,7 @@ var uploadedMediaColumns = []string{
 
 func buildUploadedMediaQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 		insertColumns := filterForInsert(uploadedMediaColumns)
 		fullSelectColumns := applyToEach(uploadedMediaColumns, func(_ int, s string) string {
 			return fullColumnName(uploadedMediaTableName, s)
@@ -67,7 +67,7 @@ WHERE %s IS NULL
 					strings.Join(applyToEach(filterForUpdate(uploadedMediaColumns, createdByUserColumn), func(_ int, s string) string {
 						return fmt.Sprintf("%s = sqlc.arg(%s)", s, s)
 					}), ",\n\t"),
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),
@@ -83,8 +83,8 @@ WHERE %s IS NULL
 WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					uploadedMediaTableName,
-					lastUpdatedAtColumn, currentTimeExpression,
-					archivedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
+					archivedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),
@@ -131,11 +131,11 @@ WHERE %s.%s IS NULL
 	%s
 FROM %s
 WHERE %s.%s IS NULL
-	AND %s.%s = ANY(sqlc.arg(ids)::text[]);`,
+	AND %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
 					uploadedMediaTableName,
 					uploadedMediaTableName, archivedAtColumn,
-					uploadedMediaTableName, idColumn,
+					anyInExpression(database, fmt.Sprintf("%s.%s", uploadedMediaTableName, idColumn), "ids"),
 				)),
 			},
 			{
@@ -153,12 +153,12 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(uploadedMediaTableName, true, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", uploadedMediaTableName, createdByUserColumn, createdByUserColumn)),
+					buildFilterCountSelect(uploadedMediaTableName, database, true, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", uploadedMediaTableName, createdByUserColumn, createdByUserColumn)),
 					buildTotalCountSelect(uploadedMediaTableName, true, nil, fmt.Sprintf("%s.%s = sqlc.arg(%s)", uploadedMediaTableName, createdByUserColumn, createdByUserColumn)),
 					uploadedMediaTableName,
 					uploadedMediaTableName, archivedAtColumn,
 					uploadedMediaTableName, createdByUserColumn, createdByUserColumn,
-					buildFilterConditions(uploadedMediaTableName, true, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", uploadedMediaTableName, createdByUserColumn, createdByUserColumn)),
+					buildFilterConditions(uploadedMediaTableName, database, true, false, fmt.Sprintf("%s.%s = sqlc.arg(%s)", uploadedMediaTableName, createdByUserColumn, createdByUserColumn)),
 					buildCursorLimitClause(uploadedMediaTableName),
 				)),
 			},

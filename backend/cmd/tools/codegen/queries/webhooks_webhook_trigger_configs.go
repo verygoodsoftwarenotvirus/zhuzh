@@ -29,7 +29,7 @@ var (
 
 func buildWebhookTriggerConfigsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 		insertColumns := filterForInsert(webhookTriggerConfigsColumns)
 
 		return []*Query{
@@ -61,7 +61,7 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s)
 	AND %s = sqlc.arg(%s);`,
 					webhookTriggerConfigsTableName,
-					archivedAtColumn, currentTimeExpression,
+					archivedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 					belongsToWebhookColumn, belongsToWebhookColumn,

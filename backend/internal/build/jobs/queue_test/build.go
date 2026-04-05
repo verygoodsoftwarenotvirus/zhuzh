@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/config"
-	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/internalops"
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories"
 	queuetest "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/services/internalops/workers/queue_test"
 
 	databasecfg "github.com/verygoodsoftwarenotvirus/platform/v4/database/config"
@@ -38,7 +38,7 @@ func BuildInjector(
 	msgconfig.RegisterMessageQueue(i)
 	databasecfg.RegisterClientConfig(i)
 	postgres.RegisterDatabaseClient(i)
-	internalops.RegisterInternalOpsRepository(i)
+	repositories.RegisterRepositories(i, cfg.Database.Provider)
 	queuetest.RegisterQueueTest(i)
 
 	do.Provide[*BuildResult](i, func(i do.Injector) (*BuildResult, error) {

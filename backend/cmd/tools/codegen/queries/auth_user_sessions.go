@@ -41,7 +41,7 @@ var userSessionsColumns = []string{
 
 func buildUserSessionsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		insertColumns := filterFromSlice(userSessionsColumns, createdAtColumn, lastActiveAtColumn, revokedAtColumn)
 
@@ -82,7 +82,7 @@ WHERE %s.%s = sqlc.arg(%s)
 					userSessionsTableName,
 					userSessionsTableName, sessionTokenIDColumn, sessionTokenIDColumn,
 					userSessionsTableName, revokedAtColumn,
-					userSessionsTableName, expiresAtColumn, currentTimeExpression,
+					userSessionsTableName, expiresAtColumn, currentTimeExpression(database),
 				)),
 			},
 			{
@@ -114,8 +114,8 @@ WHERE %s.%s = sqlc.arg(%s)
 		WHERE %s.%s = sqlc.arg(%s)
 			AND %s.%s IS NULL
 			AND %s.%s > %s
-			AND %s.%s > COALESCE(sqlc.narg(created_after), (SELECT %s - '999 years'::INTERVAL))
-			AND %s.%s < COALESCE(sqlc.narg(created_before), (SELECT %s + '999 years'::INTERVAL))
+			AND %s.%s > COALESCE(sqlc.narg(created_after), %s)
+			AND %s.%s < COALESCE(sqlc.narg(created_before), %s)
 	) AS filtered_count,
 	(
 		SELECT COUNT(%s.%s)
@@ -128,8 +128,8 @@ FROM %s
 WHERE %s.%s = sqlc.arg(%s)
 	AND %s.%s IS NULL
 	AND %s.%s > %s
-	AND %s.%s > COALESCE(sqlc.narg(created_after), (SELECT %s - '999 years'::INTERVAL))
-	AND %s.%s < COALESCE(sqlc.narg(created_before), (SELECT %s + '999 years'::INTERVAL))
+	AND %s.%s > COALESCE(sqlc.narg(created_after), %s)
+	AND %s.%s < COALESCE(sqlc.narg(created_before), %s)
 	AND %s.%s > COALESCE(sqlc.narg(cursor), '')
 ORDER BY %s.%s DESC
 LIMIT COALESCE(sqlc.narg(result_limit), 50);`,
@@ -139,22 +139,22 @@ LIMIT COALESCE(sqlc.narg(result_limit), 50);`,
 					userSessionsTableName,
 					userSessionsTableName, belongsToUserColumn, belongsToUserColumn,
 					userSessionsTableName, revokedAtColumn,
-					userSessionsTableName, expiresAtColumn, currentTimeExpression,
-					userSessionsTableName, createdAtColumn, currentTimeExpression,
-					userSessionsTableName, createdAtColumn, currentTimeExpression,
+					userSessionsTableName, expiresAtColumn, currentTimeExpression(database),
+					userSessionsTableName, createdAtColumn, pastIntervalExpression(database, "999 years"),
+					userSessionsTableName, createdAtColumn, futureIntervalExpression(database, "999 years"),
 					// total_count subquery
 					userSessionsTableName, idColumn,
 					userSessionsTableName,
 					userSessionsTableName, belongsToUserColumn, belongsToUserColumn,
 					userSessionsTableName, revokedAtColumn,
-					userSessionsTableName, expiresAtColumn, currentTimeExpression,
+					userSessionsTableName, expiresAtColumn, currentTimeExpression(database),
 					// main query
 					userSessionsTableName,
 					userSessionsTableName, belongsToUserColumn, belongsToUserColumn,
 					userSessionsTableName, revokedAtColumn,
-					userSessionsTableName, expiresAtColumn, currentTimeExpression,
-					userSessionsTableName, createdAtColumn, currentTimeExpression,
-					userSessionsTableName, createdAtColumn, currentTimeExpression,
+					userSessionsTableName, expiresAtColumn, currentTimeExpression(database),
+					userSessionsTableName, createdAtColumn, pastIntervalExpression(database, "999 years"),
+					userSessionsTableName, createdAtColumn, futureIntervalExpression(database, "999 years"),
 					userSessionsTableName, idColumn,
 					userSessionsTableName, lastActiveAtColumn,
 				)),
@@ -170,7 +170,7 @@ WHERE %s.%s = sqlc.arg(%s)
 	AND %s.%s = sqlc.arg(%s)
 	AND %s.%s IS NULL;`,
 					userSessionsTableName,
-					revokedAtColumn, currentTimeExpression,
+					revokedAtColumn, currentTimeExpression(database),
 					userSessionsTableName, idColumn, idColumn,
 					userSessionsTableName, belongsToUserColumn, belongsToUserColumn,
 					userSessionsTableName, revokedAtColumn,
@@ -186,7 +186,7 @@ WHERE %s.%s = sqlc.arg(%s)
 WHERE %s.%s = sqlc.arg(%s)
 	AND %s.%s IS NULL;`,
 					userSessionsTableName,
-					revokedAtColumn, currentTimeExpression,
+					revokedAtColumn, currentTimeExpression(database),
 					userSessionsTableName, belongsToUserColumn, belongsToUserColumn,
 					userSessionsTableName, revokedAtColumn,
 				)),
@@ -202,7 +202,7 @@ WHERE %s.%s = sqlc.arg(%s)
 	AND %s.%s != sqlc.arg(session_id)
 	AND %s.%s IS NULL;`,
 					userSessionsTableName,
-					revokedAtColumn, currentTimeExpression,
+					revokedAtColumn, currentTimeExpression(database),
 					userSessionsTableName, belongsToUserColumn, belongsToUserColumn,
 					userSessionsTableName, idColumn,
 					userSessionsTableName, revokedAtColumn,
@@ -224,7 +224,7 @@ WHERE %s.%s = sqlc.arg(%s)
 					sessionTokenIDColumn, sessionTokenIDColumn,
 					refreshTokenIDColumn, refreshTokenIDColumn,
 					expiresAtColumn, expiresAtColumn,
-					lastActiveAtColumn, currentTimeExpression,
+					lastActiveAtColumn, currentTimeExpression(database),
 					userSessionsTableName, idColumn, idColumn,
 					userSessionsTableName, revokedAtColumn,
 				)),
@@ -239,7 +239,7 @@ WHERE %s.%s = sqlc.arg(%s)
 WHERE %s.%s = sqlc.arg(%s)
 	AND %s.%s IS NULL;`,
 					userSessionsTableName,
-					lastActiveAtColumn, currentTimeExpression,
+					lastActiveAtColumn, currentTimeExpression(database),
 					userSessionsTableName, sessionTokenIDColumn, sessionTokenIDColumn,
 					userSessionsTableName, revokedAtColumn,
 				)),
@@ -254,9 +254,9 @@ WHERE %s.%s = sqlc.arg(%s)
 WHERE %s.%s IS NULL
 	AND %s.%s < %s;`,
 					userSessionsTableName,
-					revokedAtColumn, currentTimeExpression,
+					revokedAtColumn, currentTimeExpression(database),
 					userSessionsTableName, revokedAtColumn,
-					userSessionsTableName, expiresAtColumn, currentTimeExpression,
+					userSessionsTableName, expiresAtColumn, currentTimeExpression(database),
 				)),
 			},
 		}

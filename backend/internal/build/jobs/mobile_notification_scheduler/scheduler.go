@@ -16,24 +16,18 @@ const schedulerTracerName = "mobile_notification_scheduler"
 
 // Scheduler publishes notification requests to the mobile_notifications queue.
 type Scheduler struct {
-	logger                       logging.Logger
-	tracer                       tracing.Tracer
-	identityRepo                 identity.Repository
-	mobileNotificationsPublisher messagequeue.Publisher
+	tracer tracing.Tracer
 }
 
 // NewScheduler creates a new mobile notification scheduler.
 func NewScheduler(
-	logger logging.Logger,
+	_ logging.Logger,
 	tracerProvider tracing.TracerProvider,
-	identityRepo identity.Repository,
-	mobileNotificationsPublisher messagequeue.Publisher,
+	_ identity.Repository,
+	_ messagequeue.Publisher,
 ) *Scheduler {
 	return &Scheduler{
-		logger:                       logging.NewNamedLogger(logger, schedulerTracerName),
-		tracer:                       tracing.NewNamedTracer(tracerProvider, schedulerTracerName),
-		identityRepo:                 identityRepo,
-		mobileNotificationsPublisher: mobileNotificationsPublisher,
+		tracer: tracing.NewNamedTracer(tracerProvider, schedulerTracerName),
 	}
 }
 

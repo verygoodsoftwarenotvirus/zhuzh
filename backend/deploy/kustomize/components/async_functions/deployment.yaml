@@ -29,9 +29,9 @@ spec:
             - name: "RUNNING_IN_KUBERNETES"
               value: "true"
             - name: "ZHUZH_OBSERVABILITY_METRICS_OTEL_SERVICE_NAME"
-              value: "dinner_done_better_async_function_handler"
+              value: "zhuzh_async_function_handler"
             - name: "ZHUZH_OBSERVABILITY_TRACING_TRACING_SERVICE_NAME"
-              value: "dinner_done_better_async_function_handler"
+              value: "zhuzh_async_function_handler"
           volumeMounts:
             - name: "config"
               mountPath: "/etc/service-config.json"

@@ -32,7 +32,7 @@ var (
 
 func buildWebhooksQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		insertColumns := filterForInsert(webhooksColumns)
 		fullSelectColumns := mergeColumns(
@@ -57,7 +57,7 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s)
 	AND %s = sqlc.arg(%s);`,
 					webhooksTableName,
-					archivedAtColumn, currentTimeExpression,
+					archivedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 					belongsToAccountColumn, belongsToAccountColumn,
@@ -114,7 +114,7 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(webhooksTableName, true, true, []string{}, "webhooks.belongs_to_account = sqlc.arg(belongs_to_account)"),
+					buildFilterCountSelect(webhooksTableName, database, true, true, []string{}, "webhooks.belongs_to_account = sqlc.arg(belongs_to_account)"),
 					buildTotalCountSelect(
 						webhooksTableName,
 						true,
@@ -124,7 +124,7 @@ WHERE %s.%s IS NULL
 					webhooksTableName,
 					webhookTriggerConfigsTableName, webhooksTableName, idColumn, webhookTriggerConfigsTableName, belongsToWebhookColumn,
 					webhooksTableName, archivedAtColumn,
-					buildFilterConditions(webhooksTableName, true, true, fmt.Sprintf("%s.%s = sqlc.arg(%s)", webhooksTableName, belongsToAccountColumn, belongsToAccountColumn), fmt.Sprintf("%s.%s IS NULL", webhookTriggerConfigsTableName, archivedAtColumn)),
+					buildFilterConditions(webhooksTableName, database, true, true, fmt.Sprintf("%s.%s = sqlc.arg(%s)", webhooksTableName, belongsToAccountColumn, belongsToAccountColumn), fmt.Sprintf("%s.%s IS NULL", webhookTriggerConfigsTableName, archivedAtColumn)),
 					buildCursorLimitClause(webhooksTableName),
 				)),
 			},

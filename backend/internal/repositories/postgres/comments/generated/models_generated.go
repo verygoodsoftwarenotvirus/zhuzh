@@ -14,8 +14,7 @@ import (
 type CommentTargetType string
 
 const (
-	CommentTargetTypeMeals   CommentTargetType = "meals"
-	CommentTargetTypeRecipes CommentTargetType = "recipes"
+	CommentTargetTypeIssueReports CommentTargetType = "issue_reports"
 )
 
 func (e *CommentTargetType) Scan(src interface{}) error {
@@ -55,8 +54,7 @@ func (ns NullCommentTargetType) Value() (driver.Value, error) {
 
 func (e CommentTargetType) Valid() bool {
 	switch e {
-	case CommentTargetTypeMeals,
-		CommentTargetTypeRecipes:
+	case CommentTargetTypeIssueReports:
 		return true
 	}
 	return false
@@ -64,8 +62,7 @@ func (e CommentTargetType) Valid() bool {
 
 func AllCommentTargetTypeValues() []CommentTargetType {
 	return []CommentTargetType{
-		CommentTargetTypeMeals,
-		CommentTargetTypeRecipes,
+		CommentTargetTypeIssueReports,
 	}
 }
 

@@ -1,10 +1,8 @@
 -- Comments Domain Migration
--- Generic polymorphic comments for meals, recipes, meal_plans
+-- Generic polymorphic comments for platform entities
 
 CREATE TYPE comment_target_type AS ENUM (
-    'meals',
-    'recipes',
-    'meal_plans'
+    'issue_reports'
 );
 
 CREATE TABLE IF NOT EXISTS comments (

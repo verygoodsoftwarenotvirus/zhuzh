@@ -7,7 +7,7 @@ INSERT INTO password_reset_tokens (
 ) VALUES (
 	sqlc.arg(id),
 	sqlc.arg(token),
-	NOW() + (30 * '1 minutes'::INTERVAL),
+	(SELECT NOW() + '30 minutes'::INTERVAL),
 	sqlc.arg(belongs_to_user)
 );
 

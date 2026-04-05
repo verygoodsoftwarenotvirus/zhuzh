@@ -31,7 +31,7 @@ var productsColumns = []string{
 
 func buildPaymentsProductsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 		insertColumns := filterForInsert(productsColumns)
 		fullSelectColumns := applyToEach(productsColumns, func(_ int, s string) string {
 			return fullColumnName(productsTableName, s)
@@ -45,8 +45,8 @@ func buildPaymentsProductsQueries(database string) []*Query {
 				},
 				Content: buildRawQuery((&builq.Builder{}).Addf(`UPDATE %s SET %s = %s, %s = %s WHERE %s IS NULL AND %s = sqlc.arg(%s);`,
 					productsTableName,
-					archivedAtColumn, currentTimeExpression,
-					lastUpdatedAtColumn, currentTimeExpression,
+					archivedAtColumn, currentTimeExpression(database),
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),
@@ -131,11 +131,11 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(productsTableName, true, true, []string{}),
+					buildFilterCountSelect(productsTableName, database, true, true, []string{}),
 					buildTotalCountSelect(productsTableName, true, []string{}),
 					productsTableName,
 					productsTableName, archivedAtColumn,
-					buildFilterConditions(productsTableName, true, true),
+					buildFilterConditions(productsTableName, database, true, true),
 					buildCursorLimitClause(productsTableName),
 				)),
 			},
@@ -154,12 +154,12 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(productsTableName, true, true, []string{}),
+					buildFilterCountSelect(productsTableName, database, true, true, []string{}),
 					buildTotalCountSelect(productsTableName, true, []string{}),
 					productsTableName,
 					productsTableName, archivedAtColumn,
-					productsTableName, nameColumn, buildILIKEForArgument("name_query"),
-					buildFilterConditions(productsTableName, true, true),
+					productsTableName, nameColumn, buildILIKEForArgument(database, "name_query"),
+					buildFilterConditions(productsTableName, database, true, true),
 					buildCursorLimitClause(productsTableName),
 				)),
 			},
@@ -177,7 +177,7 @@ WHERE %s IS NULL
 					strings.Join(applyToEach(filterForUpdate(productsColumns), func(_ int, s string) string {
 						return fmt.Sprintf("%s = sqlc.arg(%s)", s, s)
 					}), ",\n\t"),
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),

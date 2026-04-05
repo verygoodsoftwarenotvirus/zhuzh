@@ -61,10 +61,10 @@ These variables must be configured in Terraform Cloud for each relevant workspac
 
 Analytics (API server, async handler, CronJobs, and proxy sources) uses **PostHog**. Feature flags use PostHog with a separate personal API key.
 
-| Variable                   | Description                                                                                                                                                          |
-|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Variable                   | Description                                                                                                                                             |
+|----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `POSTHOG_API_KEY`          | PostHog project API key for event ingestion (main analytics and proxy sources). Injected as `ZHUZH_ANALYTICS_POSTHOG_API_KEY` and per-source overrides. |
-| `POSTHOG_PERSONAL_API_KEY` | PostHog personal API key for feature flags API. Create in [PostHog Settings → Personal API Keys](https://app.posthog.com/settings/user-api-keys).                    |
+| `POSTHOG_PERSONAL_API_KEY` | PostHog personal API key for feature flags API. Create in [PostHog Settings → Personal API Keys](https://app.posthog.com/settings/user-api-keys).       |
 
 #### Analytics Proxy (Multi-Source)
 

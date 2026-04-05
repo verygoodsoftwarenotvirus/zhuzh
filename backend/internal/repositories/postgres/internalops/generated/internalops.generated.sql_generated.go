@@ -33,7 +33,7 @@ func (q *Queries) CreateQueueTestMessage(ctx context.Context, db DBTX, arg *Crea
 }
 
 const deleteExpiredOAuth2ClientTokens = `-- name: DeleteExpiredOAuth2ClientTokens :execrows
-DELETE FROM oauth2_client_tokens WHERE code_expires_at < (NOW() - interval '1 day') AND access_expires_at < (NOW() - interval '1 day') AND refresh_expires_at < (NOW() - interval '1 day')
+DELETE FROM oauth2_client_tokens WHERE code_expires_at < (SELECT NOW() - '1 day'::INTERVAL) AND access_expires_at < (SELECT NOW() - '1 day'::INTERVAL) AND refresh_expires_at < (SELECT NOW() - '1 day'::INTERVAL)
 `
 
 func (q *Queries) DeleteExpiredOAuth2ClientTokens(ctx context.Context, db DBTX) (int64, error) {

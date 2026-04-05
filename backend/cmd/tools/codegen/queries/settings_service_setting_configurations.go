@@ -32,7 +32,7 @@ var serviceSettingConfigurationsColumns = []string{
 
 func buildServiceSettingConfigurationQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		insertColumns := filterForInsert(serviceSettingConfigurationsColumns)
 
@@ -58,7 +58,7 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					serviceSettingConfigurationsTableName,
 					archivedAtColumn,
-					currentTimeExpression,
+					currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn,
 					idColumn,
@@ -179,7 +179,7 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(selectColumnsWithServiceSettingColumns, ",\n\t"),
-					buildFilterCountSelect(serviceSettingConfigurationsTableName, true, true, []string{}, fmt.Sprintf("%s.%s = sqlc.arg(%s)", serviceSettingConfigurationsTableName, belongsToAccountColumn, belongsToAccountColumn)),
+					buildFilterCountSelect(serviceSettingConfigurationsTableName, database, true, true, []string{}, fmt.Sprintf("%s.%s = sqlc.arg(%s)", serviceSettingConfigurationsTableName, belongsToAccountColumn, belongsToAccountColumn)),
 					buildTotalCountSelect(serviceSettingConfigurationsTableName, true, []string{}, fmt.Sprintf("%s.%s = sqlc.arg(%s)", serviceSettingConfigurationsTableName, belongsToAccountColumn, belongsToAccountColumn)),
 					serviceSettingConfigurationsTableName,
 					serviceSettingsTableName, serviceSettingConfigurationsTableName, serviceSettingIDColumn, serviceSettingsTableName, idColumn,
@@ -188,6 +188,7 @@ WHERE %s.%s IS NULL
 					serviceSettingConfigurationsTableName, belongsToAccountColumn, belongsToAccountColumn,
 					buildFilterConditions(
 						serviceSettingConfigurationsTableName,
+						database,
 						true,
 						true,
 					),
@@ -211,7 +212,7 @@ WHERE %s.%s IS NULL
 	%s
 %s;`,
 					strings.Join(selectColumnsWithServiceSettingColumns, ",\n\t"),
-					buildFilterCountSelect(serviceSettingConfigurationsTableName, true, true, []string{}, fmt.Sprintf("%s.%s = sqlc.arg(%s)", serviceSettingConfigurationsTableName, belongsToUserColumn, belongsToUserColumn)),
+					buildFilterCountSelect(serviceSettingConfigurationsTableName, database, true, true, []string{}, fmt.Sprintf("%s.%s = sqlc.arg(%s)", serviceSettingConfigurationsTableName, belongsToUserColumn, belongsToUserColumn)),
 					buildTotalCountSelect(serviceSettingConfigurationsTableName, true, []string{}, fmt.Sprintf("%s.%s = sqlc.arg(%s)", serviceSettingConfigurationsTableName, belongsToUserColumn, belongsToUserColumn)),
 					serviceSettingConfigurationsTableName,
 					serviceSettingsTableName, serviceSettingConfigurationsTableName, serviceSettingIDColumn, serviceSettingsTableName, idColumn,
@@ -220,6 +221,7 @@ WHERE %s.%s IS NULL
 					serviceSettingConfigurationsTableName, belongsToUserColumn, belongsToUserColumn,
 					buildFilterConditions(
 						serviceSettingConfigurationsTableName,
+						database,
 						true,
 						true,
 					),
@@ -240,7 +242,7 @@ WHERE %s IS NULL
 					strings.Join(applyToEach(filterForUpdate(serviceSettingConfigurationsColumns), func(i int, s string) string {
 						return fmt.Sprintf("%s = sqlc.arg(%s)", s, s)
 					}), ",\n\t"),
-					lastUpdatedAtColumn, currentTimeExpression,
+					lastUpdatedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 				)),

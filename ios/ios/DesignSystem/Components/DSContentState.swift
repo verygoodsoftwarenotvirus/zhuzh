@@ -14,7 +14,7 @@ import SwiftUI
 /// Usage:
 /// ```swift
 /// DSLoadingView()
-/// DSLoadingView("Loading meals...")
+/// DSLoadingView("Loading...")
 /// DSLoadingView("Please wait", size: .large)
 /// ```
 struct DSLoadingView: View {
@@ -209,11 +209,11 @@ struct DSErrorView: View {
 /// // With custom loading message
 /// DSContentState(
 ///   isLoading: viewModel.isLoading,
-///   loadingMessage: "Fetching recipes...",
+///   loadingMessage: "Fetching notifications...",
 ///   error: viewModel.errorMessage,
 ///   onRetry: { await viewModel.loadData() }
 /// ) {
-///   RecipeList(recipes: viewModel.recipes)
+///   NotificationList(items: viewModel.items)
 /// }
 /// ```
 struct DSContentState<Content: View>: View {
@@ -337,7 +337,7 @@ extension View {
 #Preview("Content States") {
   TabView {
     // Loading
-    DSLoadingView("Loading recipes...")
+    DSLoadingView("Loading...")
       .tabItem { Label("Loading", systemImage: "hourglass") }
 
     // Error without retry

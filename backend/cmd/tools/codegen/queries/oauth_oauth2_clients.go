@@ -28,7 +28,7 @@ var oauth2ClientsColumns = []string{
 
 func buildOAuth2ClientsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 		insertColumns := filterForInsert(oauth2ClientsColumns)
 
 		return []*Query{
@@ -43,7 +43,7 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s);`,
 					oauth2ClientsTableName,
 					archivedAtColumn,
-					currentTimeExpression,
+					currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn,
 					idColumn,
@@ -130,6 +130,7 @@ WHERE %s.%s IS NULL
 					strings.Join(strings.Split(
 						buildFilterConditions(
 							oauth2ClientsTableName,
+							database,
 							false,
 							true,
 						), "\n"),
@@ -140,6 +141,7 @@ WHERE %s.%s IS NULL
 					oauth2ClientsTableName, archivedAtColumn,
 					buildFilterConditions(
 						oauth2ClientsTableName,
+						database,
 						false,
 						true,
 					),

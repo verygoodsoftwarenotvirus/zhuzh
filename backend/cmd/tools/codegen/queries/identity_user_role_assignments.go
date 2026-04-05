@@ -29,7 +29,7 @@ var userRoleAssignmentsColumns = []string{
 
 func buildUserRoleAssignmentsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		return []*Query{
 			{
@@ -59,7 +59,7 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s)
 	AND %s = sqlc.arg(%s);`,
 					userRoleAssignmentsTableName,
-					archivedAtColumn, currentTimeExpression,
+					archivedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					idColumn, idColumn,
 					userIDColumn, userIDColumn,
@@ -75,7 +75,7 @@ WHERE %s IS NULL
 	AND %s = sqlc.arg(%s)
 	AND %s = sqlc.arg(%s);`,
 					userRoleAssignmentsTableName,
-					archivedAtColumn, currentTimeExpression,
+					archivedAtColumn, currentTimeExpression(database),
 					archivedAtColumn,
 					userIDColumn, userIDColumn,
 					accountIDColumn, accountIDColumn,

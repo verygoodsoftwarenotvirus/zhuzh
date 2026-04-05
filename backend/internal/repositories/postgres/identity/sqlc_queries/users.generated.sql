@@ -81,10 +81,15 @@ SELECT
 FROM users
 	LEFT JOIN user_avatars ON user_avatars.belongs_to_user = users.id AND user_avatars.archived_at IS NULL
 	LEFT JOIN uploaded_media ON uploaded_media.id = user_avatars.uploaded_media_id AND uploaded_media.archived_at IS NULL
-	JOIN user_role_assignments ON user_role_assignments.user_id = users.id AND user_role_assignments.account_id IS NULL AND user_role_assignments.archived_at IS NULL
-	JOIN user_roles ON user_roles.id = user_role_assignments.role_id AND user_roles.archived_at IS NULL
 WHERE users.archived_at IS NULL
-	AND user_roles.name = 'service_admin'
+	AND EXISTS (
+		SELECT 1 FROM user_role_assignments
+			JOIN user_roles ON user_roles.id = user_role_assignments.role_id AND user_roles.archived_at IS NULL
+		WHERE user_role_assignments.user_id = users.id
+			AND user_role_assignments.account_id IS NULL
+			AND user_role_assignments.archived_at IS NULL
+			AND user_roles.name = 'service_admin'
+	)
 	AND users.username = sqlc.arg(username)
 	AND users.two_factor_secret_verified_at IS NOT NULL;
 
@@ -344,6 +349,7 @@ SELECT
 	(
 		SELECT COUNT(users.id)
 		FROM users
+		JOIN account_user_memberships ON account_user_memberships.belongs_to_user = users.id AND account_user_memberships.archived_at IS NULL
 		WHERE users.archived_at IS NULL
 			AND
 			users.created_at > COALESCE(sqlc.narg(created_after), (SELECT NOW() - '999 years'::INTERVAL))
@@ -357,18 +363,25 @@ SELECT
 				OR users.last_updated_at < COALESCE(sqlc.narg(updated_after), (SELECT NOW() + '999 years'::INTERVAL))
 			)
 			AND (NOT COALESCE(sqlc.narg(include_archived), false)::boolean OR users.archived_at = NULL)
+			AND account_user_memberships.belongs_to_account = sqlc.arg(belongs_to_account)
 	) AS filtered_count,
 	(
 		SELECT COUNT(users.id)
 		FROM users
+		JOIN account_user_memberships ON account_user_memberships.belongs_to_user = users.id AND account_user_memberships.archived_at IS NULL
 		WHERE users.archived_at IS NULL
 			AND account_user_memberships.belongs_to_account = sqlc.arg(belongs_to_account)
 	) AS total_count
 FROM users
 	LEFT JOIN user_avatars ON user_avatars.belongs_to_user = users.id AND user_avatars.archived_at IS NULL
 	LEFT JOIN uploaded_media ON uploaded_media.id = user_avatars.uploaded_media_id AND uploaded_media.archived_at IS NULL
-JOIN account_user_memberships ON account_user_memberships.belongs_to_user = users.id
 WHERE users.archived_at IS NULL
+	AND EXISTS (
+		SELECT 1 FROM account_user_memberships
+		WHERE account_user_memberships.belongs_to_user = users.id
+			AND account_user_memberships.belongs_to_account = sqlc.arg(belongs_to_account)
+			AND account_user_memberships.archived_at IS NULL
+	)
 	AND users.created_at > COALESCE(sqlc.narg(created_after), (SELECT NOW() - '999 years'::INTERVAL))
 	AND users.created_at < COALESCE(sqlc.narg(created_before), (SELECT NOW() + '999 years'::INTERVAL))
 	AND (
@@ -380,8 +393,6 @@ WHERE users.archived_at IS NULL
 		OR users.last_updated_at < COALESCE(sqlc.narg(updated_before), (SELECT NOW() + '999 years'::INTERVAL))
 	)
 			AND (NOT COALESCE(sqlc.narg(include_archived), false)::boolean OR users.archived_at = NULL)
-	AND account_user_memberships.belongs_to_account = sqlc.arg(belongs_to_account)
-	AND account_user_memberships.archived_at IS NULL
 	AND users.id > COALESCE(sqlc.narg(cursor), '')
 ORDER BY users.id ASC
 LIMIT COALESCE(sqlc.narg(result_limit), 50);
@@ -433,7 +444,7 @@ SELECT users.id
 FROM users
 WHERE users.archived_at IS NULL
 	AND users.last_indexed_at IS NULL
-	OR users.last_indexed_at < NOW() - '24 hours'::INTERVAL;
+	OR users.last_indexed_at < (SELECT NOW() - '24 hours'::INTERVAL);
 
 -- name: GetUserWithUnverifiedTwoFactor :one
 SELECT

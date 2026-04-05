@@ -74,12 +74,12 @@ func TestServiceImpl_CreateComment(T *testing.T) {
 		s := buildCommentsServiceImplForTest(t)
 
 		userID := commentsfakes.BuildFakeID()
-		recipeID := commentsfakes.BuildFakeID()
+		referenceID := commentsfakes.BuildFakeID()
 
 		mcm := &commentsmanagermock.MockCommentsDataManager{}
 		fakeComment := commentsfakes.BuildFakeComment()
-		fakeComment.TargetType = "recipes"
-		fakeComment.ReferencedID = recipeID
+		fakeComment.TargetType = "issue_reports"
+		fakeComment.ReferencedID = referenceID
 
 		mcm.On(reflection.GetMethodName(mcm.CreateComment), testutils.ContextMatcher, mock.Anything).Return(fakeComment, nil)
 		s.commentsManager = mcm
@@ -93,8 +93,8 @@ func TestServiceImpl_CreateComment(T *testing.T) {
 		res, err := s.CreateComment(ctx, &commentssvc.CreateCommentRequest{
 			Input: &commentssvc.CommentCreationRequestInput{
 				Content:      "test comment",
-				TargetType:   "recipes",
-				ReferencedId: recipeID,
+				TargetType:   "issue_reports",
+				ReferencedId: referenceID,
 			},
 		})
 		assert.NoError(t, err)
@@ -147,16 +147,16 @@ func TestServiceImpl_GetCommentsForReference(T *testing.T) {
 		ctx := t.Context()
 		s := buildCommentsServiceImplForTest(t)
 
-		recipeID := commentsfakes.BuildFakeID()
-		expected := commentsfakes.BuildFakeCommentList("recipes", recipeID)
+		referenceID := commentsfakes.BuildFakeID()
+		expected := commentsfakes.BuildFakeCommentList("issue_reports", referenceID)
 
 		mcm := &commentsmanagermock.MockCommentsDataManager{}
-		mcm.On(reflection.GetMethodName(mcm.GetCommentsForReference), testutils.ContextMatcher, "recipes", recipeID, testutils.QueryFilterMatcher).Return(expected, nil)
+		mcm.On(reflection.GetMethodName(mcm.GetCommentsForReference), testutils.ContextMatcher, "issue_reports", referenceID, testutils.QueryFilterMatcher).Return(expected, nil)
 		s.commentsManager = mcm
 
 		res, err := s.GetCommentsForReference(ctx, &commentssvc.GetCommentsForReferenceRequest{
-			TargetType:   "recipes",
-			ReferencedId: recipeID,
+			TargetType:   "issue_reports",
+			ReferencedId: referenceID,
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, res)

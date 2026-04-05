@@ -10,7 +10,7 @@ import SwiftUI
 // MARK: - DSStepperButtons
 
 /// A reusable increment/decrement control with optional center content.
-/// Use for scale inputs, meal assignment, and other numeric steppers.
+/// Use for quantity inputs and other numeric steppers.
 ///
 /// Usage:
 /// ```swift

@@ -8,14 +8,7 @@ import (
 	settingsmanager "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/settings/manager"
 	waitlistsmanager "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/domain/waitlists/manager"
 	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/functions/datachangemessagehandler"
-	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/auditlogentries"
-	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/auth"
-	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/dataprivacy"
-	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/identity"
-	internalopsrepo "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/internalops"
-	issue_reports "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/issuereports"
-	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/uploadedmedia"
-	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories/postgres/webhooks"
+	"github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/repositories"
 	identityindexing "github.com/verygoodsoftwarenotvirus/zhuzh/backend/internal/services/identity/indexing"
 
 	analyticscfg "github.com/verygoodsoftwarenotvirus/platform/v4/analytics/config"
@@ -64,14 +57,7 @@ func BuildInjector(
 	notificationscfg.RegisterPushSender(i)
 
 	// repos
-	auditlogentries.RegisterAuditLogRepository(i)
-	auth.RegisterAuthRepository(i)
-	dataprivacy.RegisterDataPrivacyRepository(i)
-	identity.RegisterIdentityRepository(i)
-	issue_reports.RegisterIssueReportsRepository(i)
-	uploadedmedia.RegisterUploadedMediaRepository(i)
-	webhooks.RegisterWebhooksRepository(i)
-	internalopsrepo.RegisterInternalOpsRepository(i)
+	repositories.RegisterRepositories(i, cfg.Database.Provider)
 
 	// managers
 	notificationsmanager.RegisterNotificationsDataManager(i)

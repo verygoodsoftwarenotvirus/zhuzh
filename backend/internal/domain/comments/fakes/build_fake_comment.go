@@ -11,7 +11,7 @@ func BuildFakeComment() *comments.Comment {
 	return &comments.Comment{
 		ID:            BuildFakeID(),
 		Content:       buildUniqueString(),
-		TargetType:    "recipes",
+		TargetType:    "issue_reports",
 		ReferencedID:  BuildFakeID(),
 		BelongsToUser: BuildFakeID(),
 		CreatedAt:     BuildFakeTime(),
@@ -47,7 +47,7 @@ func BuildFakeCommentList(targetType, referencedID string) *filtering.QueryFilte
 func BuildFakeCommentCreationRequestInput() *comments.CommentCreationRequestInput {
 	return &comments.CommentCreationRequestInput{
 		Content:       buildUniqueString(),
-		TargetType:    "recipes",
+		TargetType:    "issue_reports",
 		ReferencedID:  BuildFakeID(),
 		BelongsToUser: BuildFakeID(),
 	}
@@ -58,7 +58,7 @@ func BuildFakeCommentDatabaseCreationInput() *comments.CommentDatabaseCreationIn
 	return &comments.CommentDatabaseCreationInput{
 		ID:            BuildFakeID(),
 		Content:       buildUniqueString(),
-		TargetType:    "recipes",
+		TargetType:    "issue_reports",
 		ReferencedID:  BuildFakeID(),
 		BelongsToUser: BuildFakeID(),
 	}

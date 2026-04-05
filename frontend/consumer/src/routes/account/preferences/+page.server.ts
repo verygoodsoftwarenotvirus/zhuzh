@@ -7,10 +7,7 @@ import {
   createServiceSettingConfiguration,
   updateServiceSettingConfiguration,
 } from '$lib/grpc/clients';
-import type {
-  ServiceSetting,
-  ServiceSettingConfiguration,
-} from '@zhuzh/api-client/settings/settings_messages';
+import type { ServiceSetting, ServiceSettingConfiguration } from '@zhuzh/api-client/settings/settings_messages';
 
 interface ConfigurableSetting {
   setting: ServiceSetting;

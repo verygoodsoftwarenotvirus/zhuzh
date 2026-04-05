@@ -54,8 +54,8 @@ func main() {
 		ctx,
 		apiConfig,
 		// Create admin user and get account
-		localdev.WithIdentityRepository(func(ctx context.Context, repo identity.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider, dbClient database.Client) error {
-			user, userErr := localdev.CreatePremadeAdminUser(ctx, logger, tracerProvider, repo, dbClient, premadeAdminUser)
+		localdev.WithIdentityRepository(apiConfig.Database.Provider, func(ctx context.Context, repo identity.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider, dbClient database.Client) error {
+			user, userErr := localdev.CreatePremadeAdminUser(ctx, logger, tracerProvider, repo, dbClient, premadeAdminUser, apiConfig.Database.Provider)
 			if userErr != nil {
 				return userErr
 			}
@@ -206,7 +206,7 @@ func main() {
 			return nil
 		}),
 		// Create OAuth2 client
-		localdev.WithOAuth2Repository(func(ctx context.Context, repo oauth.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider) error {
+		localdev.WithOAuth2Repository(apiConfig.Database.Provider, func(ctx context.Context, repo oauth.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider) error {
 			_, err = repo.CreateOAuth2Client(ctx, &oauth.OAuth2ClientDatabaseCreationInput{
 				ID:           strings.Repeat("b", 20),
 				Name:         "localdev_admin_client",
@@ -217,7 +217,7 @@ func main() {
 			return err
 		}),
 		// Create example service settings
-		localdev.WithSettingsRepository(func(ctx context.Context, repo settings.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider) error {
+		localdev.WithSettingsRepository(apiConfig.Database.Provider, func(ctx context.Context, repo settings.Repository, logger logging.Logger, tracerProvider tracing.TracerProvider) error {
 			return createExampleServiceSettings(ctx, repo, logger)
 		}),
 	)

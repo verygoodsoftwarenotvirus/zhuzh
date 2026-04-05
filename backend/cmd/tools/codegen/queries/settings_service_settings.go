@@ -30,7 +30,7 @@ var serviceSettingsColumns = []string{
 
 func buildServiceSettingQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 
 		insertColumns := filterForInsert(serviceSettingsColumns)
 
@@ -43,7 +43,7 @@ func buildServiceSettingQueries(database string) []*Query {
 				Content: buildRawQuery((&builq.Builder{}).Addf(`UPDATE %s SET %s = %s WHERE %s = sqlc.arg(%s);`,
 					serviceSettingsTableName,
 					archivedAtColumn,
-					currentTimeExpression,
+					currentTimeExpression(database),
 					idColumn,
 					idColumn,
 				)),
@@ -98,12 +98,13 @@ WHERE %s.%s IS NULL
 					strings.Join(applyToEach(serviceSettingsColumns, func(i int, s string) string {
 						return fmt.Sprintf("%s.%s", serviceSettingsTableName, s)
 					}), ",\n\t"),
-					buildFilterCountSelect(serviceSettingsTableName, true, true, []string{}),
+					buildFilterCountSelect(serviceSettingsTableName, database, true, true, []string{}),
 					buildTotalCountSelect(serviceSettingsTableName, true, []string{}),
 					serviceSettingsTableName,
 					serviceSettingsTableName, archivedAtColumn,
 					buildFilterConditions(
 						serviceSettingsTableName,
+						database,
 						true,
 						true,
 					),
@@ -145,16 +146,17 @@ WHERE %s.%s IS NULL
 					strings.Join(applyToEach(serviceSettingsColumns, func(i int, s string) string {
 						return fmt.Sprintf("%s.%s", serviceSettingsTableName, s)
 					}), ",\n\t"),
-					buildFilterCountSelect(serviceSettingsTableName, true, true, []string{}),
+					buildFilterCountSelect(serviceSettingsTableName, database, true, true, []string{}),
 					buildTotalCountSelect(serviceSettingsTableName, true, []string{}),
 					serviceSettingsTableName,
 					serviceSettingsTableName,
 					archivedAtColumn,
 					serviceSettingsTableName,
 					nameColumn,
-					buildILIKEForArgument("name_query"),
+					buildILIKEForArgument(database, "name_query"),
 					buildFilterConditions(
 						serviceSettingsTableName,
+						database,
 						true,
 						true,
 					),

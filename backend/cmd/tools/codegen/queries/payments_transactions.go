@@ -29,7 +29,7 @@ var paymentTransactionsColumns = []string{
 
 func buildPaymentsTransactionsQueries(database string) []*Query {
 	switch database {
-	case postgres:
+	case postgres, sqlite:
 		insertColumns := filterForInsert(paymentTransactionsColumns)
 		fullSelectColumns := applyToEach(paymentTransactionsColumns, func(_ int, s string) string {
 			return fullColumnName(paymentTransactionsTableName, s)
@@ -68,11 +68,11 @@ WHERE %s
 	%s
 %s;`,
 					strings.Join(fullSelectColumns, ",\n\t"),
-					buildFilterCountSelect(paymentTransactionsTableName, false, false, nil, accountCondition),
+					buildFilterCountSelect(paymentTransactionsTableName, database, false, false, nil, accountCondition),
 					buildTotalCountSelect(paymentTransactionsTableName, false, nil, accountCondition),
 					paymentTransactionsTableName,
 					accountCondition,
-					buildFilterConditions(paymentTransactionsTableName, false, false, accountCondition),
+					buildFilterConditions(paymentTransactionsTableName, database, false, false, accountCondition),
 					buildCursorLimitClause(paymentTransactionsTableName),
 				)),
 			},
