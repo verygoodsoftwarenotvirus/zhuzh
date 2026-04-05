@@ -19,6 +19,11 @@ func isValidEmail(_ email: String) -> Bool {
   return emailPredicate.evaluate(with: email)
 }
 
+func createMockAuthenticationManager() -> AuthenticationManager {
+  let manager = AuthenticationManager()
+  return manager
+}
+
 // MARK: - RegisterView Validation Tests
 
 @Suite(.serialized)

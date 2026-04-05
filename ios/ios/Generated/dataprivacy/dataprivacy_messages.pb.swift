@@ -20,77 +20,65 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-public struct Dataprivacy_UserDataCollection: @unchecked Sendable {
+public struct Dataprivacy_UserDataCollection: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var reportID: String {
-    get {return _storage._reportID}
-    set {_uniqueStorage()._reportID = newValue}
-  }
+  public var reportID: String = String()
 
   public var identityDataCollection: Identity_DataCollection {
-    get {return _storage._identityDataCollection ?? Identity_DataCollection()}
-    set {_uniqueStorage()._identityDataCollection = newValue}
+    get {return _identityDataCollection ?? Identity_DataCollection()}
+    set {_identityDataCollection = newValue}
   }
   /// Returns true if `identityDataCollection` has been explicitly set.
-  public var hasIdentityDataCollection: Bool {return _storage._identityDataCollection != nil}
+  public var hasIdentityDataCollection: Bool {return self._identityDataCollection != nil}
   /// Clears the value of `identityDataCollection`. Subsequent reads from it will return its default value.
-  public mutating func clearIdentityDataCollection() {_uniqueStorage()._identityDataCollection = nil}
+  public mutating func clearIdentityDataCollection() {self._identityDataCollection = nil}
 
   public var settingsDataCollection: Settings_DataCollection {
-    get {return _storage._settingsDataCollection ?? Settings_DataCollection()}
-    set {_uniqueStorage()._settingsDataCollection = newValue}
+    get {return _settingsDataCollection ?? Settings_DataCollection()}
+    set {_settingsDataCollection = newValue}
   }
   /// Returns true if `settingsDataCollection` has been explicitly set.
-  public var hasSettingsDataCollection: Bool {return _storage._settingsDataCollection != nil}
+  public var hasSettingsDataCollection: Bool {return self._settingsDataCollection != nil}
   /// Clears the value of `settingsDataCollection`. Subsequent reads from it will return its default value.
-  public mutating func clearSettingsDataCollection() {_uniqueStorage()._settingsDataCollection = nil}
+  public mutating func clearSettingsDataCollection() {self._settingsDataCollection = nil}
 
   public var webhooksDataCollection: Webhooks_DataCollection {
-    get {return _storage._webhooksDataCollection ?? Webhooks_DataCollection()}
-    set {_uniqueStorage()._webhooksDataCollection = newValue}
+    get {return _webhooksDataCollection ?? Webhooks_DataCollection()}
+    set {_webhooksDataCollection = newValue}
   }
   /// Returns true if `webhooksDataCollection` has been explicitly set.
-  public var hasWebhooksDataCollection: Bool {return _storage._webhooksDataCollection != nil}
+  public var hasWebhooksDataCollection: Bool {return self._webhooksDataCollection != nil}
   /// Clears the value of `webhooksDataCollection`. Subsequent reads from it will return its default value.
-  public mutating func clearWebhooksDataCollection() {_uniqueStorage()._webhooksDataCollection = nil}
+  public mutating func clearWebhooksDataCollection() {self._webhooksDataCollection = nil}
 
   public var notificationsDataCollection: Notifications_DataCollection {
-    get {return _storage._notificationsDataCollection ?? Notifications_DataCollection()}
-    set {_uniqueStorage()._notificationsDataCollection = newValue}
+    get {return _notificationsDataCollection ?? Notifications_DataCollection()}
+    set {_notificationsDataCollection = newValue}
   }
   /// Returns true if `notificationsDataCollection` has been explicitly set.
-  public var hasNotificationsDataCollection: Bool {return _storage._notificationsDataCollection != nil}
+  public var hasNotificationsDataCollection: Bool {return self._notificationsDataCollection != nil}
   /// Clears the value of `notificationsDataCollection`. Subsequent reads from it will return its default value.
-  public mutating func clearNotificationsDataCollection() {_uniqueStorage()._notificationsDataCollection = nil}
+  public mutating func clearNotificationsDataCollection() {self._notificationsDataCollection = nil}
 
-  public var auditLogEntries: [Audit_AuditLogEntry] {
-    get {return _storage._auditLogEntries}
-    set {_uniqueStorage()._auditLogEntries = newValue}
-  }
+  public var auditLogEntries: [Audit_AuditLogEntry] = []
 
-  public var issueReports: [IssueReports_IssueReport] {
-    get {return _storage._issueReports}
-    set {_uniqueStorage()._issueReports = newValue}
-  }
+  public var issueReports: [IssueReports_IssueReport] = []
 
-  public var uploadedMedia: [UploadedMedia_UploadedMedia] {
-    get {return _storage._uploadedMedia}
-    set {_uniqueStorage()._uploadedMedia = newValue}
-  }
+  public var uploadedMedia: [UploadedMedia_UploadedMedia] = []
 
-  public var waitlistSignups: [Waitlists_WaitlistSignup] {
-    get {return _storage._waitlistSignups}
-    set {_uniqueStorage()._waitlistSignups = newValue}
-  }
+  public var waitlistSignups: [Waitlists_WaitlistSignup] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _storage = _StorageClass.defaultInstance
+  fileprivate var _identityDataCollection: Identity_DataCollection? = nil
+  fileprivate var _settingsDataCollection: Settings_DataCollection? = nil
+  fileprivate var _webhooksDataCollection: Webhooks_DataCollection? = nil
+  fileprivate var _notificationsDataCollection: Notifications_DataCollection? = nil
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -99,126 +87,73 @@ fileprivate let _protobuf_package = "dataprivacy"
 
 extension Dataprivacy_UserDataCollection: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".UserDataCollection"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}report_id\0\u{3}identity_data_collection\0\u{3}settings_data_collection\0\u{3}webhooks_data_collection\0\u{3}notifications_data_collection\0\u{3}audit_log_entries\0\u{3}issue_reports\0\u{3}uploaded_media\0\u{3}waitlist_signups\0")
-
-  fileprivate class _StorageClass {
-    var _reportID: String = String()
-    var _identityDataCollection: Identity_DataCollection? = nil
-    var _settingsDataCollection: Settings_DataCollection? = nil
-    var _webhooksDataCollection: Webhooks_DataCollection? = nil
-    var _notificationsDataCollection: Notifications_DataCollection? = nil
-    var _auditLogEntries: [Audit_AuditLogEntry] = []
-    var _issueReports: [IssueReports_IssueReport] = []
-    var _uploadedMedia: [UploadedMedia_UploadedMedia] = []
-    var _waitlistSignups: [Waitlists_WaitlistSignup] = []
-
-      // This property is used as the initial default value for new instances of the type.
-      // The type itself is protecting the reference to its storage via CoW semantics.
-      // This will force a copy to be made of this reference when the first mutation occurs;
-      // hence, it is safe to mark this as `nonisolated(unsafe)`.
-      static nonisolated(unsafe) let defaultInstance = _StorageClass()
-
-    private init() {}
-
-    init(copying source: _StorageClass) {
-      _reportID = source._reportID
-      _identityDataCollection = source._identityDataCollection
-      _settingsDataCollection = source._settingsDataCollection
-      _webhooksDataCollection = source._webhooksDataCollection
-      _notificationsDataCollection = source._notificationsDataCollection
-      _auditLogEntries = source._auditLogEntries
-      _issueReports = source._issueReports
-      _uploadedMedia = source._uploadedMedia
-      _waitlistSignups = source._waitlistSignups
-    }
-  }
-
-  fileprivate mutating func _uniqueStorage() -> _StorageClass {
-    if !isKnownUniquelyReferenced(&_storage) {
-      _storage = _StorageClass(copying: _storage)
-    }
-    return _storage
-  }
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}report_id\0\u{3}identity_data_collection\0\u{3}settings_data_collection\0\u{3}webhooks_data_collection\0\u{4}\u{2}notifications_data_collection\0\u{3}audit_log_entries\0\u{3}issue_reports\0\u{3}uploaded_media\0\u{3}waitlist_signups\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    _ = _uniqueStorage()
-    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      while let fieldNumber = try decoder.nextFieldNumber() {
-        // The use of inline closures is to circumvent an issue where the compiler
-        // allocates stack space for every case branch when no optimizations are
-        // enabled. https://github.com/apple/swift-protobuf/issues/1034
-        switch fieldNumber {
-        case 1: try { try decoder.decodeSingularStringField(value: &_storage._reportID) }()
-        case 2: try { try decoder.decodeSingularMessageField(value: &_storage._identityDataCollection) }()
-        case 3: try { try decoder.decodeSingularMessageField(value: &_storage._settingsDataCollection) }()
-        case 4: try { try decoder.decodeSingularMessageField(value: &_storage._webhooksDataCollection) }()
-        case 5: break  // reserved (removed field)
-        case 6: try { try decoder.decodeSingularMessageField(value: &_storage._notificationsDataCollection) }()
-        case 7: try { try decoder.decodeRepeatedMessageField(value: &_storage._auditLogEntries) }()
-        case 8: try { try decoder.decodeRepeatedMessageField(value: &_storage._issueReports) }()
-        case 9: try { try decoder.decodeRepeatedMessageField(value: &_storage._uploadedMedia) }()
-        case 10: try { try decoder.decodeRepeatedMessageField(value: &_storage._waitlistSignups) }()
-        default: break
-        }
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.reportID) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._identityDataCollection) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._settingsDataCollection) }()
+      case 4: try { try decoder.decodeSingularMessageField(value: &self._webhooksDataCollection) }()
+      case 6: try { try decoder.decodeSingularMessageField(value: &self._notificationsDataCollection) }()
+      case 7: try { try decoder.decodeRepeatedMessageField(value: &self.auditLogEntries) }()
+      case 8: try { try decoder.decodeRepeatedMessageField(value: &self.issueReports) }()
+      case 9: try { try decoder.decodeRepeatedMessageField(value: &self.uploadedMedia) }()
+      case 10: try { try decoder.decodeRepeatedMessageField(value: &self.waitlistSignups) }()
+      default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every if/case branch local when no optimizations
-      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-      // https://github.com/apple/swift-protobuf/issues/1182
-      if !_storage._reportID.isEmpty {
-        try visitor.visitSingularStringField(value: _storage._reportID, fieldNumber: 1)
-      }
-      try { if let v = _storage._identityDataCollection {
-        try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-      } }()
-      try { if let v = _storage._settingsDataCollection {
-        try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-      } }()
-      try { if let v = _storage._webhooksDataCollection {
-        try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
-      } }()
-      try { if let v = _storage._notificationsDataCollection {
-        try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
-      } }()
-      if !_storage._auditLogEntries.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._auditLogEntries, fieldNumber: 7)
-      }
-      if !_storage._issueReports.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._issueReports, fieldNumber: 8)
-      }
-      if !_storage._uploadedMedia.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._uploadedMedia, fieldNumber: 9)
-      }
-      if !_storage._waitlistSignups.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._waitlistSignups, fieldNumber: 10)
-      }
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if !self.reportID.isEmpty {
+      try visitor.visitSingularStringField(value: self.reportID, fieldNumber: 1)
+    }
+    try { if let v = self._identityDataCollection {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
+    try { if let v = self._settingsDataCollection {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    try { if let v = self._webhooksDataCollection {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    } }()
+    try { if let v = self._notificationsDataCollection {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
+    } }()
+    if !self.auditLogEntries.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.auditLogEntries, fieldNumber: 7)
+    }
+    if !self.issueReports.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.issueReports, fieldNumber: 8)
+    }
+    if !self.uploadedMedia.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.uploadedMedia, fieldNumber: 9)
+    }
+    if !self.waitlistSignups.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.waitlistSignups, fieldNumber: 10)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Dataprivacy_UserDataCollection, rhs: Dataprivacy_UserDataCollection) -> Bool {
-    if lhs._storage !== rhs._storage {
-      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
-        let _storage = _args.0
-        let rhs_storage = _args.1
-        if _storage._reportID != rhs_storage._reportID {return false}
-        if _storage._identityDataCollection != rhs_storage._identityDataCollection {return false}
-        if _storage._settingsDataCollection != rhs_storage._settingsDataCollection {return false}
-        if _storage._webhooksDataCollection != rhs_storage._webhooksDataCollection {return false}
-        if _storage._notificationsDataCollection != rhs_storage._notificationsDataCollection {return false}
-        if _storage._auditLogEntries != rhs_storage._auditLogEntries {return false}
-        if _storage._issueReports != rhs_storage._issueReports {return false}
-        if _storage._uploadedMedia != rhs_storage._uploadedMedia {return false}
-        if _storage._waitlistSignups != rhs_storage._waitlistSignups {return false}
-        return true
-      }
-      if !storagesAreEqual {return false}
-    }
+    if lhs.reportID != rhs.reportID {return false}
+    if lhs._identityDataCollection != rhs._identityDataCollection {return false}
+    if lhs._settingsDataCollection != rhs._settingsDataCollection {return false}
+    if lhs._webhooksDataCollection != rhs._webhooksDataCollection {return false}
+    if lhs._notificationsDataCollection != rhs._notificationsDataCollection {return false}
+    if lhs.auditLogEntries != rhs.auditLogEntries {return false}
+    if lhs.issueReports != rhs.issueReports {return false}
+    if lhs.uploadedMedia != rhs.uploadedMedia {return false}
+    if lhs.waitlistSignups != rhs.waitlistSignups {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

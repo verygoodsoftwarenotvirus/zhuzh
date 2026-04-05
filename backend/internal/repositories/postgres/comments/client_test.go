@@ -205,7 +205,7 @@ func TestQuerier_Integration_ArchiveCommentsForReference(t *testing.T) {
 
 	user := pgtesting.CreateUserForTest(t, nil, dbc.writeDB)
 	referencedID := identifiers.New()
-	targetType := "things"
+	targetType := "issue_reports"
 
 	input := fakes.BuildFakeCommentDatabaseCreationInput()
 	input.BelongsToUser = user.ID

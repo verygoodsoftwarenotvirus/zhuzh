@@ -124,4 +124,3 @@ struct UploadMediaView: View {
       .environment(authManager)
   }
 }
-

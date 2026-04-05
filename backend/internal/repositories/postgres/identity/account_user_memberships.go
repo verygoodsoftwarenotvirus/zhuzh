@@ -195,6 +195,10 @@ func (r *repository) MarkAccountAsUserDefault(ctx context.Context, userID, accou
 	ctx, span := r.tracer.StartSpan(ctx)
 	defer span.End()
 
+	if userID == "" || accountID == "" {
+		return platformerrors.ErrInvalidIDProvided
+	}
+
 	tx, err := r.writeDB.BeginTx(ctx, nil)
 	if err != nil {
 		return observability.PrepareAndLogError(err, r.logger, span, "beginning transaction")

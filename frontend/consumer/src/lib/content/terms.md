@@ -4,8 +4,8 @@ Last updated: March 2025
 
 ## 1. Acceptance of Terms
 
-By accessing or using Zhuzh ("the Service"), you agree to be bound by these Terms of Service. If you do not
-agree to these terms, please do not use the Service.
+By accessing or using Zhuzh ("the Service"), you agree to be bound by these Terms of Service. If you do not agree to
+these terms, please do not use the Service.
 
 ## 2. Description of Service
 
@@ -49,9 +49,9 @@ We reserve the right to change pricing with reasonable notice.
 
 ## 6. Intellectual Property
 
-The Service, including its design, features, and content (excluding user-generated content), is owned by Zhuzh
-and protected by intellectual property laws. You may not copy, modify, or create derivative works without our
-written permission.
+The Service, including its design, features, and content (excluding user-generated content), is owned by Zhuzh and
+protected by intellectual property laws. You may not copy, modify, or create derivative works without our written
+permission.
 
 ## 7. Disclaimers
 
@@ -60,8 +60,8 @@ OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
 ## 8. Limitation of Liability
 
-TO THE MAXIMUM EXTENT PERMITTED BY LAW, ZHUZH SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
-CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES.
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, ZHUZH SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL,
+OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES.
 
 ## 9. Termination
 

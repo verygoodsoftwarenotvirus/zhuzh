@@ -4,8 +4,8 @@ Last updated: March 2025
 
 ## 1. Introduction
 
-Zhuzh ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we
-collect, use, disclose, and safeguard your information when you use our platform.
+Zhuzh ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use,
+disclose, and safeguard your information when you use our platform.
 
 ## 2. Information We Collect
 

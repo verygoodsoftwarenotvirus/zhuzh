@@ -19,7 +19,7 @@ import (
 
 const (
 	exampleQuantity              = 3
-	migratedServiceSettingsCount = 1 // user_temperature_unit from migration 00021
+	migratedServiceSettingsCount = 0
 )
 
 func buildDatabaseClientForTest(t *testing.T) (c *Repository, auditLogEntryRepo audit.Repository, container *pgcontainers.PostgresContainer) {

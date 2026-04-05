@@ -1,10 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { PageContainer, FormField, Button, Alert, Link } from '@zhuzh/ui';
-  import type {
-    ServiceSetting,
-    ServiceSettingConfiguration,
-  } from '@zhuzh/api-client/settings/settings_messages';
+  import type { ServiceSetting, ServiceSettingConfiguration } from '@zhuzh/api-client/settings/settings_messages';
 
   interface ConfigurableSetting {
     setting: ServiceSetting;
